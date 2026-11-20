@@ -1,0 +1,3185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SANELIYAMG ASSESSMENT AI — Educational Assessment & Feedback Platform</title>
+
+  <!-- Google Fonts: Plus Jakarta Sans & Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet" />
+
+  <!-- Tailwind CSS via CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'system-ui', 'sans-serif'],
+            display: ['Plus Jakarta Sans', 'Inter', 'system-ui', 'sans-serif'],
+          },
+          colors: {
+            brand: {
+              bg: '#FDFBFE',
+              pinkLight: '#FCE7F3',
+              pinkSoft: '#F9A8D4',
+              pink: '#EC4899',
+              lavenderLight: '#F3E8FF',
+              lavenderSoft: '#D8B4FE',
+              purple: '#A855F7',
+              lilac: '#EDE9FE',
+              ink: '#1F1635',
+              muted: '#645A7A',
+            }
+          },
+          boxShadow: {
+            'soft': '0 10px 30px -10px rgba(168, 85, 247, 0.12), 0 4px 12px -4px rgba(236, 72, 153, 0.08)',
+            'glow': '0 14px 34px -8px rgba(236, 72, 153, 0.28), 0 8px 20px -6px rgba(168, 85, 247, 0.24)',
+          }
+        }
+      }
+    };
+  </script>
+
+  <!-- Lucide Icons via CDN -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <!-- PDF.js for client-side PDF text extraction (with worker fallback) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <script>
+    if (window.pdfjsLib) {
+      window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    }
+  </script>
+
+  <!-- Mammoth.js & JSZip fallback for client-side DOCX text extraction -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+
+  <!-- html2pdf.js for clean Unicode/Cyrillic PDF export -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+  <style>
+    body {
+      background-color: #FDFBFE;
+      color: #1F1635;
+      font-family: 'Inter', system-ui, sans-serif;
+      overflow-x: hidden;
+    }
+
+    h1, h2, h3, h4, .font-display {
+      font-family: 'Plus Jakarta Sans', 'Inter', system-ui, sans-serif;
+    }
+
+    /* Signature Pastel Pink-to-Purple Gradients */
+    .btn-gradient {
+      background: linear-gradient(135deg, #F472B6 0%, #A855F7 100%);
+      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .btn-gradient:hover {
+      background: linear-gradient(135deg, #EC4899 0%, #9333EA 100%);
+      transform: translateY(-1px);
+      box-shadow: 0 14px 30px -6px rgba(236, 72, 153, 0.35), 0 8px 18px -6px rgba(168, 85, 247, 0.3);
+    }
+    .btn-gradient:active {
+      transform: translateY(0);
+    }
+
+    .card-selected {
+      background: linear-gradient(135deg, #FDF2F8 0%, #F5F3FF 100%);
+      border-color: #D946EF !important;
+      box-shadow: 0 10px 25px -8px rgba(217, 70, 239, 0.22);
+    }
+
+    .pastel-surface {
+      background: linear-gradient(135deg, #FDF2F8 0%, #F5F3FF 100%);
+    }
+
+    .text-gradient {
+      background: linear-gradient(135deg, #DB2777 0%, #9333EA 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    /* Subtle floating background blobs */
+    @keyframes floatSlow {
+      0%, 100% { transform: translate(0, 0) scale(1); }
+      50% { transform: translate(18px, -14px) scale(1.04); }
+    }
+    .blob-animate {
+      animation: floatSlow 12s ease-in-out infinite;
+    }
+
+    @keyframes pulseRing {
+      0% { transform: scale(0.92); opacity: 0.75; }
+      70% { transform: scale(1.18); opacity: 0; }
+      100% { transform: scale(1.18); opacity: 0; }
+    }
+    .pulse-ring::before {
+      content: '';
+      position: absolute;
+      inset: -8px;
+      border-radius: 9999px;
+      background: linear-gradient(135deg, #F472B6, #A855F7);
+      animation: pulseRing 2s cubic-bezier(0.24, 0, 0.38, 1) infinite;
+      z-index: -1;
+    }
+
+    /* Custom subtle scrollbar */
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #FDFBFE;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #E9D5FF;
+      border-radius: 9999px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #D8B4FE;
+    }
+
+    /* Print fallback styling */
+    @media print {
+      .no-print { display: none !important; }
+      body { background: #FFFFFF !important; }
+      .print-clean { box-shadow: none !important; border: 1px solid #E5E7EB !important; }
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col relative selection:bg-pink-200 selection:text-purple-950">
+
+  <!-- Ambient Pastel Decorative Background Orbs -->
+  <div class="pointer-events-none fixed inset-0 overflow-hidden -z-10 no-print" aria-hidden="true">
+    <div class="blob-animate absolute -top-28 -left-24 w-96 h-96 rounded-full bg-pink-200/35 blur-3xl"></div>
+    <div class="blob-animate absolute top-1/3 -right-28 w-[28rem] h-[28rem] rounded-full bg-purple-200/35 blur-3xl" style="animation-delay: -4s;"></div>
+    <div class="blob-animate absolute -bottom-32 left-1/3 w-96 h-96 rounded-full bg-fuchsia-100/40 blur-3xl" style="animation-delay: -8s;"></div>
+  </div>
+
+  <!-- Top Sticky Glassmorphic Navigation Bar -->
+  <header class="sticky top-0 z-40 backdrop-blur-xl bg-white/85 border-b border-purple-100/80 shadow-xs no-print">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex items-center justify-between h-16 sm:h-18 gap-3">
+        <!-- Brand Logo & Name -->
+        <button onclick="navigateTo('home')" class="flex items-center gap-3 text-left group focus:outline-none">
+          <div class="w-10 h-10 rounded-2xl btn-gradient flex items-center justify-center text-white shadow-soft group-hover:scale-105 transition-transform shrink-0">
+            <i data-lucide="sparkles" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <span class="font-display font-extrabold text-sm sm:text-base tracking-tight text-gradient block leading-tight">
+              SANELIYAMG ASSESSMENT AI
+            </span>
+            <span class="text-[11px] text-slate-500 font-medium hidden sm:block">
+              Educational Assessment &amp; Feedback
+            </span>
+          </div>
+        </button>
+
+        <!-- Desktop Navigation Links -->
+        <nav class="hidden md:flex items-center gap-1 bg-purple-50/70 p-1 rounded-2xl border border-purple-100">
+          <button data-nav="home" onclick="navigateTo('home')" class="nav-btn px-3.5 py-2 rounded-xl text-sm font-medium transition-all text-slate-600 hover:text-purple-900">
+            Home
+          </button>
+          <button data-nav="workspace" onclick="navigateTo('workspace')" class="nav-btn px-3.5 py-2 rounded-xl text-sm font-medium transition-all text-slate-600 hover:text-purple-900">
+            Assessment Workspace
+          </button>
+          <button data-nav="history" onclick="navigateTo('history')" class="nav-btn px-3.5 py-2 rounded-xl text-sm font-medium transition-all text-slate-600 hover:text-purple-900 flex items-center gap-1.5">
+            <span>Assessment History</span>
+            <span id="navHistoryCount" class="hidden text-[11px] px-1.5 py-0.5 rounded-full bg-pink-100 text-pink-700 font-semibold">0</span>
+          </button>
+          <button data-nav="about" onclick="navigateTo('about')" class="nav-btn px-3.5 py-2 rounded-xl text-sm font-medium transition-all text-slate-600 hover:text-purple-900">
+            About
+          </button>
+          <button data-nav="settings" onclick="navigateTo('settings')" class="nav-btn px-3.5 py-2 rounded-xl text-sm font-medium transition-all text-slate-600 hover:text-purple-900">
+            Settings
+          </button>
+        </nav>
+
+        <!-- Right Mode Pill + Mobile Menu Button -->
+        <div class="flex items-center gap-2">
+          <button id="headerModeToggle" onclick="toggleMode()" title="Click to switch between Teacher Mode and Student Mode"
+            class="flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold border transition-all bg-gradient-to-r from-pink-50 to-purple-50 border-pink-200 text-purple-900 hover:border-purple-300 shadow-2xs">
+            <span id="headerModeDot" class="w-2 h-2 rounded-full bg-pink-500"></span>
+            <span id="headerModeLabel">Teacher Mode</span>
+            <i data-lucide="repeat" class="w-3.5 h-3.5 text-purple-500"></i>
+          </button>
+
+          <button id="mobileMenuBtn" onclick="toggleMobileMenu()" aria-label="Toggle Menu"
+            class="md:hidden p-2.5 rounded-xl border border-purple-100 bg-white text-slate-700 hover:bg-purple-50">
+            <i data-lucide="menu" class="w-5 h-5"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Mobile Dropdown Navigation -->
+      <div id="mobileMenu" class="hidden md:hidden pb-4 pt-2 border-t border-purple-100/70 space-y-1">
+        <button data-nav="home" onclick="navigateTo('home'); toggleMobileMenu(false)" class="nav-btn-mobile w-full text-left px-4 py-2.5 rounded-xl text-sm font-medium text-slate-700 hover:bg-purple-50">
+          Home
+        </button>
+        <button data-nav="workspace" onclick="navigateTo('workspace'); toggleMobileMenu(false)" class="nav-btn-mobile w-full text-left px-4 py-2.5 rounded-xl text-sm font-medium text-slate-700 hover:bg-purple-50">
+          Assessment Workspace
+        </button>
+        <button data-nav="history" onclick="navigateTo('history'); toggleMobileMenu(false)" class="nav-btn-mobile w-full text-left px-4 py-2.5 rounded-xl text-sm font-medium text-slate-700 hover:bg-purple-50 flex items-center justify-between">
+          <span>Assessment History</span>
+          <span id="mobileHistoryCount" class="text-xs px-2 py-0.5 rounded-full bg-pink-100 text-pink-700 font-semibold">0</span>
+        </button>
+        <button data-nav="about" onclick="navigateTo('about'); toggleMobileMenu(false)" class="nav-btn-mobile w-full text-left px-4 py-2.5 rounded-xl text-sm font-medium text-slate-700 hover:bg-purple-50">
+          About
+        </button>
+        <button data-nav="settings" onclick="navigateTo('settings'); toggleMobileMenu(false)" class="nav-btn-mobile w-full text-left px-4 py-2.5 rounded-xl text-sm font-medium text-slate-700 hover:bg-purple-50">
+          Settings
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Global Toast Notification -->
+  <div id="toastContainer" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 pointer-events-none no-print"></div>
+
+  <!-- Main Content Container -->
+  <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10">
+
+    <!-- ========================================================= -->
+    <!-- VIEW 1: WELCOME PAGE – CHOOSE YOUR MODE                   -->
+    <!-- ========================================================= -->
+    <section id="view-home" class="view-section space-y-12">
+      <!-- Hero Section -->
+      <div class="text-center max-w-3xl mx-auto pt-2 sm:pt-6 space-y-5">
+        <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-gradient-to-r from-pink-100/90 to-purple-100/90 border border-pink-200/80 text-purple-900 text-xs sm:text-sm font-semibold shadow-2xs">
+          <i data-lucide="sparkles" class="w-4 h-4 text-pink-600"></i>
+          <span>Intelligent Academic Evaluation &amp; Constructive Feedback</span>
+        </div>
+
+        <h1 class="font-display text-3xl sm:text-5xl font-extrabold tracking-tight text-slate-900 leading-[1.15]">
+          Welcome to <span class="text-gradient">SANELIYAMG ASSESSMENT AI</span>
+        </h1>
+
+        <p class="text-base sm:text-lg text-slate-600 leading-relaxed max-w-2xl mx-auto">
+          Evaluate academic work, analyze learning outcomes, identify strengths and weaknesses, and generate detailed, constructive, personalized feedback—tailored for both educators and learners.
+        </p>
+      </div>
+
+      <!-- Choose Your Mode Heading -->
+      <div class="space-y-6">
+        <div class="text-center">
+          <h2 class="font-display text-xl sm:text-2xl font-bold text-slate-900">Choose Your Mode</h2>
+          <p class="text-sm text-slate-500 mt-1">Select your role to personalize the assessment experience and feedback tone</p>
+        </div>
+
+        <!-- Two Large Interactive Mode Cards -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8 max-w-5xl mx-auto">
+          <!-- TEACHER MODE CARD -->
+          <div onclick="selectModeAndEnter('teacher')"
+            class="group cursor-pointer relative bg-white rounded-3xl p-7 sm:p-9 border border-pink-100 shadow-soft hover:shadow-glow hover:border-pink-300 transition-all duration-300 flex flex-col justify-between overflow-hidden">
+            <div class="absolute top-0 right-0 w-44 h-44 bg-gradient-to-bl from-pink-100/70 via-purple-50/40 to-transparent rounded-bl-full pointer-events-none"></div>
+
+            <div class="space-y-5 relative">
+              <div class="flex items-center justify-between">
+                <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-pink-100 to-purple-100 border border-pink-200/80 flex items-center justify-center text-pink-600 group-hover:scale-105 transition-transform">
+                  <i data-lucide="graduation-cap" class="w-8 h-8"></i>
+                </div>
+                <span class="px-3 py-1 rounded-full text-xs font-semibold bg-pink-50 text-pink-700 border border-pink-200/70">
+                  For Educators
+                </span>
+              </div>
+
+              <div>
+                <h3 class="font-display text-2xl font-extrabold text-slate-900 tracking-tight group-hover:text-pink-700 transition-colors">
+                  TEACHER MODE
+                </h3>
+                <p class="mt-3 text-slate-600 text-sm sm:text-base leading-relaxed">
+                  An AI-powered assistant that helps educators evaluate student assignments, analyze learning outcomes, apply different assessment approaches, and generate meaningful feedback.
+                </p>
+              </div>
+
+              <ul class="space-y-2 pt-2 text-xs sm:text-sm text-slate-600">
+                <li class="flex items-center gap-2">
+                  <i data-lucide="check-circle-2" class="w-4 h-4 text-pink-500 shrink-0"></i>
+                  <span>Rubric-aligned evaluation across 9 pedagogical frameworks</span>
+                </li>
+                <li class="flex items-center gap-2">
+                  <i data-lucide="check-circle-2" class="w-4 h-4 text-pink-500 shrink-0"></i>
+                  <span>Custom task requirements &amp; learning objective alignment</span>
+                </li>
+                <li class="flex items-center gap-2">
+                  <i data-lucide="check-circle-2" class="w-4 h-4 text-pink-500 shrink-0"></i>
+                  <span>Professional evaluative feedback ready for student sharing</span>
+                </li>
+              </ul>
+            </div>
+
+            <div class="pt-7 mt-6 border-t border-pink-100/80">
+              <button type="button" onclick="event.stopPropagation(); selectModeAndEnter('teacher')"
+                class="w-full py-3.5 px-6 rounded-2xl btn-gradient text-white font-semibold text-sm sm:text-base flex items-center justify-center gap-2 shadow-soft">
+                <span>Enter Teacher Mode</span>
+                <i data-lucide="arrow-right" class="w-4 h-4"></i>
+              </button>
+            </div>
+          </div>
+
+          <!-- STUDENT MODE CARD -->
+          <div onclick="selectModeAndEnter('student')"
+            class="group cursor-pointer relative bg-white rounded-3xl p-7 sm:p-9 border border-purple-100 shadow-soft hover:shadow-glow hover:border-purple-300 transition-all duration-300 flex flex-col justify-between overflow-hidden">
+            <div class="absolute top-0 right-0 w-44 h-44 bg-gradient-to-bl from-purple-100/70 via-pink-50/40 to-transparent rounded-bl-full pointer-events-none"></div>
+
+            <div class="space-y-5 relative">
+              <div class="flex items-center justify-between">
+                <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-purple-100 to-pink-100 border border-purple-200/80 flex items-center justify-center text-purple-600 group-hover:scale-105 transition-transform">
+                  <i data-lucide="book-open-check" class="w-8 h-8"></i>
+                </div>
+                <span class="px-3 py-1 rounded-full text-xs font-semibold bg-purple-50 text-purple-700 border border-purple-200/70">
+                  For Learners
+                </span>
+              </div>
+
+              <div>
+                <h3 class="font-display text-2xl font-extrabold text-slate-900 tracking-tight group-hover:text-purple-700 transition-colors">
+                  STUDENT MODE
+                </h3>
+                <p class="mt-3 text-slate-600 text-sm sm:text-base leading-relaxed">
+                  A personal learning assistant that helps students analyze their assignments, understand their mistakes, evaluate their performance, and discover ways to improve.
+                </p>
+              </div>
+
+              <ul class="space-y-2 pt-2 text-xs sm:text-sm text-slate-600">
+                <li class="flex items-center gap-2">
+                  <i data-lucide="check-circle-2" class="w-4 h-4 text-purple-500 shrink-0"></i>
+                  <span>Supportive, easy-to-understand explanations of strengths &amp; gaps</span>
+                </li>
+                <li class="flex items-center gap-2">
+                  <i data-lucide="check-circle-2" class="w-4 h-4 text-purple-500 shrink-0"></i>
+                  <span>Self-reflection prompts &amp; step-by-step revision guidance</span>
+                </li>
+                <li class="flex items-center gap-2">
+                  <i data-lucide="check-circle-2" class="w-4 h-4 text-purple-500 shrink-0"></i>
+                  <span>Feedback available in English, Russian, or Kazakh</span>
+                </li>
+              </ul>
+            </div>
+
+            <div class="pt-7 mt-6 border-t border-purple-100/80">
+              <button type="button" onclick="event.stopPropagation(); selectModeAndEnter('student')"
+                class="w-full py-3.5 px-6 rounded-2xl btn-gradient text-white font-semibold text-sm sm:text-base flex items-center justify-center gap-2 shadow-soft">
+                <span>Enter Student Mode</span>
+                <i data-lucide="arrow-right" class="w-4 h-4"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Platform Highlights Bar -->
+      <div class="max-w-5xl mx-auto grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2">
+        <div class="bg-white/80 backdrop-blur-xs rounded-2xl p-5 border border-purple-100 flex items-start gap-3.5">
+          <div class="w-10 h-10 rounded-xl bg-pink-50 text-pink-600 flex items-center justify-center shrink-0">
+            <i data-lucide="layers" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <h4 class="font-display font-bold text-sm text-slate-900">9 Assessment Approaches</h4>
+            <p class="text-xs text-slate-500 mt-1">Formative, Summative, Content, Language, Cognitive, Feedback, Self, Peer &amp; CLIL 4Cs.</p>
+          </div>
+        </div>
+        <div class="bg-white/80 backdrop-blur-xs rounded-2xl p-5 border border-purple-100 flex items-start gap-3.5">
+          <div class="w-10 h-10 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center shrink-0">
+            <i data-lucide="file-text" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <h4 class="font-display font-bold text-sm text-slate-900">PDF, DOC &amp; DOCX Parsing</h4>
+            <p class="text-xs text-slate-500 mt-1">Upload academic documents directly or paste text for instant deep content evaluation.</p>
+          </div>
+        </div>
+        <div class="bg-white/80 backdrop-blur-xs rounded-2xl p-5 border border-purple-100 flex items-start gap-3.5">
+          <div class="w-10 h-10 rounded-xl bg-fuchsia-50 text-fuchsia-600 flex items-center justify-center shrink-0">
+            <i data-lucide="languages" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <h4 class="font-display font-bold text-sm text-slate-900">Multilingual AI Reports</h4>
+            <p class="text-xs text-slate-500 mt-1">Generate academic feedback in English, Russian, or Kazakh with PDF export.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========================================================= -->
+    <!-- VIEW 2: ASSESSMENT WORKSPACE                              -->
+    <!-- ========================================================= -->
+    <section id="view-workspace" class="view-section hidden space-y-8">
+      <!-- Mode Context Banner -->
+      <div class="pastel-surface rounded-3xl p-5 sm:p-6 border border-pink-200/70 shadow-soft flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div class="flex items-start sm:items-center gap-4">
+          <div id="workspaceModeIconBox" class="w-12 h-12 rounded-2xl btn-gradient text-white flex items-center justify-center shrink-0 shadow-soft">
+            <i id="workspaceModeIcon" data-lucide="graduation-cap" class="w-6 h-6"></i>
+          </div>
+          <div>
+            <div class="flex flex-wrap items-center gap-2">
+              <span id="workspaceModeTitle" class="font-display font-extrabold text-lg sm:text-xl text-slate-900">
+                Teacher Assessment Workspace
+              </span>
+              <span id="workspaceModePill" class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-pink-100 text-pink-800 border border-pink-200">
+                TEACHER MODE
+              </span>
+            </div>
+            <p id="workspaceModeSubtitle" class="text-xs sm:text-sm text-slate-600 mt-0.5">
+              Evaluate student assignments against pedagogical frameworks, learning objectives, and academic rubrics.
+            </p>
+          </div>
+        </div>
+
+        <div class="flex flex-wrap items-center gap-2.5 shrink-0">
+          <button type="button" onclick="loadSampleAssignment()"
+            class="px-3.5 py-2 rounded-xl bg-white hover:bg-purple-50 text-purple-800 border border-purple-200 text-xs font-semibold flex items-center gap-1.5 transition-colors shadow-2xs">
+            <i data-lucide="wand-2" class="w-3.5 h-3.5 text-pink-500"></i>
+            <span>Load Sample Assignment</span>
+          </button>
+          <button type="button" onclick="toggleMode()"
+            class="px-3.5 py-2 rounded-xl bg-white hover:bg-pink-50 text-pink-800 border border-pink-200 text-xs font-semibold flex items-center gap-1.5 transition-colors shadow-2xs">
+            <i data-lucide="arrow-left-right" class="w-3.5 h-3.5 text-purple-500"></i>
+            <span id="workspaceSwitchBtnText">Switch to Student Mode</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Validation Alert Box (Hidden by default) -->
+      <div id="workspaceErrorAlert" class="hidden rounded-2xl bg-rose-50 border border-rose-200 p-4 flex items-start gap-3 text-rose-800">
+        <i data-lucide="alert-circle" class="w-5 h-5 text-rose-600 shrink-0 mt-0.5"></i>
+        <div class="flex-1 text-sm">
+          <p class="font-semibold" id="workspaceErrorTitle">Please complete required fields</p>
+          <p class="text-rose-700 mt-0.5" id="workspaceErrorMessage"></p>
+        </div>
+        <button onclick="hideWorkspaceError()" class="text-rose-500 hover:text-rose-700 p-1">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <!-- STEP 1: CHOOSE ASSESSMENT TYPE -->
+      <div class="bg-white rounded-3xl p-6 sm:p-8 border border-purple-100 shadow-soft space-y-6">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-purple-100/70 pb-5">
+          <div>
+            <div class="flex items-center gap-2.5">
+              <span class="w-7 h-7 rounded-lg bg-pink-100 text-pink-700 font-display font-bold text-xs flex items-center justify-center">1</span>
+              <h2 class="font-display text-xl sm:text-2xl font-bold text-slate-900">Choose Assessment Type</h2>
+            </div>
+            <p class="text-sm text-slate-500 mt-1">
+              Select one or multiple assessment approaches. The AI will generate a dedicated evaluation section for each selected type.
+            </p>
+          </div>
+
+          <div class="flex flex-wrap items-center gap-2.5">
+            <span id="selectedCountBadge" class="px-3.5 py-1.5 rounded-full text-xs font-bold bg-gradient-to-r from-pink-100 to-purple-100 text-purple-900 border border-purple-200">
+              0 of 9 selected
+            </span>
+            <button type="button" onclick="selectAllAssessments()"
+              class="px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-purple-50 hover:bg-purple-100 text-purple-800 border border-purple-200 transition-colors">
+              Select All
+            </button>
+            <button type="button" onclick="clearAllAssessments()"
+              class="px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-slate-50 hover:bg-pink-50 text-slate-600 hover:text-pink-700 border border-slate-200 transition-colors">
+              Clear Selection
+            </button>
+          </div>
+        </div>
+
+        <!-- 9 Assessment Type Cards Grid -->
+        <div id="assessmentCardsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <!-- Populated dynamically by JavaScript -->
+        </div>
+
+        <!-- Selected Pills Summary Bar -->
+        <div id="selectedPillsBar" class="hidden pt-2 flex flex-wrap items-center gap-2">
+          <span class="text-xs font-semibold text-slate-500 mr-1">Active criteria:</span>
+          <div id="selectedPillsList" class="flex flex-wrap gap-1.5"></div>
+        </div>
+      </div>
+
+      <!-- STEP 2: UPLOAD YOUR WORK -->
+      <div class="bg-white rounded-3xl p-6 sm:p-8 border border-purple-100 shadow-soft space-y-6">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-purple-100/70 pb-5">
+          <div>
+            <div class="flex items-center gap-2.5">
+              <span class="w-7 h-7 rounded-lg bg-purple-100 text-purple-700 font-display font-bold text-xs flex items-center justify-center">2</span>
+              <h2 class="font-display text-xl sm:text-2xl font-bold text-slate-900">Upload Your Work</h2>
+            </div>
+            <p class="text-sm text-slate-500 mt-1" id="uploadSectionHint">
+              Upload a student document (PDF, DOC, DOCX) or paste/type the assignment text directly below.
+            </p>
+          </div>
+
+          <!-- Submission Method Switcher -->
+          <div class="inline-flex p-1 rounded-2xl bg-purple-50/80 border border-purple-100 self-start sm:self-auto">
+            <button type="button" id="tabUploadDoc" onclick="switchSubmissionTab('file')"
+              class="px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all flex items-center gap-2 bg-white text-purple-900 shadow-2xs">
+              <i data-lucide="file-up" class="w-4 h-4 text-pink-500"></i>
+              <span>Option A: Upload Document</span>
+            </button>
+            <button type="button" id="tabEnterText" onclick="switchSubmissionTab('text')"
+              class="px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all flex items-center gap-2 text-slate-600 hover:text-purple-900">
+              <i data-lucide="align-left" class="w-4 h-4 text-purple-500"></i>
+              <span>Option B: Enter Text</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Option A: Document Upload Dropzone -->
+        <div id="panelUploadDoc" class="space-y-4">
+          <div id="dropZone"
+            class="relative rounded-2xl border-2 border-dashed border-pink-300/90 bg-gradient-to-br from-pink-50/40 via-white to-purple-50/40 hover:border-purple-400 hover:bg-purple-50/30 transition-all p-8 sm:p-10 text-center cursor-pointer">
+            <input type="file" id="fileInput" accept=".pdf,.doc,.docx,.txt,.md,.rtf,.csv,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain,text/markdown,application/rtf,text/rtf" class="hidden" />
+
+            <div class="max-w-md mx-auto space-y-3">
+              <div class="w-14 h-14 mx-auto rounded-2xl bg-gradient-to-br from-pink-100 to-purple-100 border border-pink-200 flex items-center justify-center text-purple-600">
+                <i data-lucide="upload-cloud" class="w-7 h-7"></i>
+              </div>
+              <div>
+                <p class="font-display font-bold text-base sm:text-lg text-slate-900">
+                  Drag &amp; drop your assignment file here
+                </p>
+                <p class="text-xs sm:text-sm text-slate-500 mt-1">
+                  Supports <span class="font-semibold text-pink-700">PDF</span>, <span class="font-semibold text-purple-700">DOC / DOCX</span>, and <span class="font-semibold text-fuchsia-700">TXT / MD / RTF</span> documents
+                </p>
+              </div>
+              <div class="pt-2">
+                <button type="button" id="browseFileBtn" onclick="event.stopPropagation(); triggerFilePicker()"
+                  class="px-5 py-2.5 rounded-xl btn-gradient text-white text-xs sm:text-sm font-semibold inline-flex items-center gap-2 shadow-soft">
+                  <i data-lucide="folder-open" class="w-4 h-4"></i>
+                  <span>Browse &amp; Upload File</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Uploaded File Info Card (Hidden until file uploaded) -->
+          <div id="uploadedFileCard" class="hidden rounded-2xl border border-purple-200 bg-gradient-to-r from-pink-50/60 to-purple-50/60 p-4 sm:p-5 space-y-4">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div class="flex items-center gap-3.5 min-w-0">
+                <div class="w-12 h-12 rounded-xl bg-white border border-purple-200 flex items-center justify-center text-pink-600 shrink-0 shadow-2xs">
+                  <i data-lucide="file-check-2" class="w-6 h-6"></i>
+                </div>
+                <div class="min-w-0">
+                  <div class="flex flex-wrap items-center gap-2">
+                    <p id="uploadedFileName" class="font-display font-bold text-sm sm:text-base text-slate-900 truncate">
+                      assignment.pdf
+                    </p>
+                    <span id="uploadedFileFormat" class="px-2 py-0.5 rounded-md text-[11px] font-bold uppercase bg-purple-100 text-purple-800 border border-purple-200">
+                      PDF
+                    </span>
+                  </div>
+                  <div class="flex items-center gap-2 mt-1">
+                    <span id="uploadedFileStatus" class="inline-flex items-center gap-1.5 text-xs font-medium text-emerald-700">
+                      <i data-lucide="check-circle" class="w-3.5 h-3.5"></i>
+                      <span>Text extracted successfully</span>
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="flex flex-wrap items-center gap-2 shrink-0">
+                <button type="button" onclick="loadExtractedIntoTextEditor()"
+                  class="px-3 py-2 rounded-xl bg-white hover:bg-pink-50 text-pink-800 border border-pink-200 text-xs font-semibold flex items-center gap-1.5 transition-colors">
+                  <i data-lucide="file-edit" class="w-3.5 h-3.5"></i>
+                  <span>Load into Text Editor</span>
+                </button>
+                <button type="button" onclick="toggleExtractedPreview()"
+                  class="px-3 py-2 rounded-xl bg-white hover:bg-purple-50 text-purple-800 border border-purple-200 text-xs font-semibold flex items-center gap-1.5 transition-colors">
+                  <i data-lucide="eye" class="w-3.5 h-3.5"></i>
+                  <span id="previewToggleLabel">Hide Text</span>
+                </button>
+                <button type="button" onclick="triggerFilePicker()"
+                  class="px-3 py-2 rounded-xl bg-white hover:bg-pink-50 text-slate-700 border border-slate-200 text-xs font-semibold flex items-center gap-1.5 transition-colors">
+                  <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i>
+                  <span>Replace</span>
+                </button>
+                <button type="button" onclick="removeUploadedFile()"
+                  class="px-3 py-2 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-xs font-semibold flex items-center gap-1.5 transition-colors">
+                  <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                  <span>Remove</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Extracted Text Preview (Expanded automatically on upload) -->
+            <div id="extractedPreviewBox" class="pt-3 border-t border-purple-200/60 space-y-1.5">
+              <div class="flex items-center justify-between">
+                <label for="extractedFileText" class="block text-xs font-semibold text-slate-700">
+                  Extracted Document Content (Editable before assessment):
+                </label>
+                <span id="extractedPreviewStats" class="text-[11px] font-medium text-slate-500">0 words</span>
+              </div>
+              <textarea id="extractedFileText" rows="7" oninput="syncExtractedText()"
+                placeholder="Extracted text from your uploaded document will appear here..."
+                class="w-full rounded-xl border border-purple-200 bg-white/95 p-3.5 text-xs sm:text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-purple-300 leading-relaxed"></textarea>
+            </div>
+          </div>
+        </div>
+
+        <!-- Option B: Direct Text Editor -->
+        <div id="panelEnterText" class="hidden space-y-3">
+          <div class="flex items-center justify-between gap-2">
+            <label for="assignmentTitleInput" class="text-xs font-semibold text-slate-600">
+              Assignment Title (Optional)
+            </label>
+            <span id="textStatsBadge" class="text-xs font-medium text-slate-500">0 words &bull; 0 characters</span>
+          </div>
+          <input type="text" id="assignmentTitleInput" placeholder="e.g., Argumentative Essay on Renewable Energy Transition"
+            class="w-full rounded-xl border border-purple-100 bg-purple-50/30 px-4 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:bg-white focus:ring-2 focus:ring-pink-300 transition-all" />
+
+          <div class="relative">
+            <textarea id="assignmentTextArea" rows="10" oninput="updateTextStats()"
+              placeholder="Paste or type your assignment here..."
+              class="w-full rounded-2xl border border-purple-200/90 bg-white p-4 sm:p-5 text-sm sm:text-base text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-300 focus:border-purple-400 leading-relaxed transition-all"></textarea>
+          </div>
+
+          <div class="flex items-center justify-between">
+            <p class="text-xs text-slate-500">
+              Tip: Longer, complete submissions yield richer, example-backed feedback.
+            </p>
+            <button type="button" onclick="clearDirectText()"
+              class="text-xs font-semibold text-slate-500 hover:text-rose-600 flex items-center gap-1 transition-colors">
+              <i data-lucide="eraser" class="w-3.5 h-3.5"></i>
+              <span>Clear Text</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- STEP 3: TASK CONTEXT & REQUIREMENTS (OPTIONAL) -->
+      <div class="bg-white rounded-3xl p-6 sm:p-8 border border-purple-100 shadow-soft space-y-6">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-purple-100/70 pb-5">
+          <div>
+            <div class="flex items-center gap-2.5">
+              <span class="w-7 h-7 rounded-lg bg-pink-100 text-pink-700 font-display font-bold text-xs flex items-center justify-center">3</span>
+              <h2 class="font-display text-xl sm:text-2xl font-bold text-slate-900">Task Context &amp; Requirements</h2>
+              <span class="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-slate-100 text-slate-600">Optional</span>
+            </div>
+            <p id="contextSectionSubtitle" class="text-sm text-slate-500 mt-1">
+              Provide optional task instructions, learning objectives, or focus areas to tailor the AI evaluation.
+            </p>
+          </div>
+
+          <button type="button" onclick="toggleContextFields()" id="toggleContextBtn"
+            class="self-start sm:self-auto px-3.5 py-2 rounded-xl bg-purple-50 hover:bg-purple-100 text-purple-800 border border-purple-200 text-xs font-semibold flex items-center gap-1.5 transition-colors">
+            <i data-lucide="chevron-up" id="toggleContextIcon" class="w-4 h-4"></i>
+            <span id="toggleContextLabel">Collapse Fields</span>
+          </button>
+        </div>
+
+        <div id="contextFieldsContainer" class="space-y-5">
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+            <!-- Field 1: Task Requirements -->
+            <div class="space-y-2">
+              <label for="taskRequirementsInput" id="taskReqLabel" class="block font-display font-bold text-sm text-slate-800">
+                Task Requirements
+              </label>
+              <p id="taskReqHelper" class="text-xs text-slate-500">
+                What were students expected to do? What instructions, conditions, or assessment criteria were provided?
+              </p>
+              <textarea id="taskRequirementsInput" rows="4"
+                placeholder="e.g., Write a 500-word analytical essay comparing two historical primary sources with clear thesis and citations..."
+                class="w-full rounded-2xl border border-purple-100 bg-purple-50/25 p-3.5 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:bg-white focus:ring-2 focus:ring-purple-300 transition-all"></textarea>
+            </div>
+
+            <!-- Field 2: Learning Objectives -->
+            <div class="space-y-2">
+              <label for="learningObjectivesInput" id="learningObjLabel" class="block font-display font-bold text-sm text-slate-800">
+                Learning Objectives
+              </label>
+              <p id="learningObjHelper" class="text-xs text-slate-500">
+                What knowledge, skills, competencies, or learning outcomes should students demonstrate?
+              </p>
+              <textarea id="learningObjectivesInput" rows="4"
+                placeholder="e.g., Demonstrate synthesis of evidence, structured academic argumentation, and accurate use of domain concepts..."
+                class="w-full rounded-2xl border border-purple-100 bg-purple-50/25 p-3.5 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:bg-white focus:ring-2 focus:ring-purple-300 transition-all"></textarea>
+            </div>
+          </div>
+
+          <!-- Field 3: Additional Instructions -->
+          <div class="space-y-2.5">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div>
+                <label for="additionalInstructionsInput" class="block font-display font-bold text-sm text-slate-800">
+                  Additional Instructions
+                </label>
+                <p class="text-xs text-slate-500">
+                  Are there any specific aspects the AI should pay particular attention to during the assessment?
+                </p>
+              </div>
+            </div>
+
+            <!-- Quick-insert focus chips -->
+            <div class="flex flex-wrap gap-1.5">
+              <button type="button" onclick="appendFocusInstruction('Focus on academic vocabulary.')"
+                class="px-3 py-1 rounded-full text-xs font-medium bg-pink-50 hover:bg-pink-100 text-pink-800 border border-pink-200/80 transition-colors">
+                + Focus on academic vocabulary
+              </button>
+              <button type="button" onclick="appendFocusInstruction('Pay special attention to critical thinking.')"
+                class="px-3 py-1 rounded-full text-xs font-medium bg-purple-50 hover:bg-purple-100 text-purple-800 border border-purple-200/80 transition-colors">
+                + Pay special attention to critical thinking
+              </button>
+              <button type="button" onclick="appendFocusInstruction('Evaluate the use of subject-specific terminology.')"
+                class="px-3 py-1 rounded-full text-xs font-medium bg-fuchsia-50 hover:bg-fuchsia-100 text-fuchsia-800 border border-fuchsia-200/80 transition-colors">
+                + Evaluate subject-specific terminology
+              </button>
+              <button type="button" onclick="appendFocusInstruction('Check whether the learning objectives have been achieved.')"
+                class="px-3 py-1 rounded-full text-xs font-medium bg-indigo-50 hover:bg-indigo-100 text-indigo-800 border border-indigo-200/80 transition-colors">
+                + Check learning objectives achievement
+              </button>
+            </div>
+
+            <textarea id="additionalInstructionsInput" rows="3"
+              placeholder="Add any custom focus points, grading emphasis, or specific rubric notes..."
+              class="w-full rounded-2xl border border-purple-100 bg-purple-50/25 p-3.5 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:bg-white focus:ring-2 focus:ring-purple-300 transition-all"></textarea>
+          </div>
+        </div>
+      </div>
+
+      <!-- STEP 4: AI RESPONSE LANGUAGE & GENERATE CTA -->
+      <div class="bg-white rounded-3xl p-6 sm:p-8 border border-purple-100 shadow-soft space-y-6">
+        <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+          <div class="space-y-1.5">
+            <div class="flex items-center gap-2.5">
+              <span class="w-7 h-7 rounded-lg bg-purple-100 text-purple-700 font-display font-bold text-xs flex items-center justify-center">4</span>
+              <h2 class="font-display text-xl sm:text-2xl font-bold text-slate-900">AI Response Language</h2>
+            </div>
+            <p class="text-xs sm:text-sm text-slate-500">
+              The platform interface remains in English. Only the generated assessment results and feedback will appear in your selected language.
+            </p>
+          </div>
+
+          <!-- Language Segmented Selector -->
+          <div class="grid grid-cols-3 gap-2.5 p-1.5 rounded-2xl bg-purple-50/80 border border-purple-100 w-full lg:w-auto">
+            <button type="button" data-lang="English" onclick="selectResponseLanguage('English')"
+              class="lang-option px-4 py-3 rounded-xl text-xs sm:text-sm font-bold transition-all flex flex-col items-center justify-center gap-0.5 bg-white text-purple-900 shadow-2xs border border-pink-200">
+              <span>English</span>
+              <span class="text-[10px] font-medium text-slate-400">EN</span>
+            </button>
+            <button type="button" data-lang="Russian" onclick="selectResponseLanguage('Russian')"
+              class="lang-option px-4 py-3 rounded-xl text-xs sm:text-sm font-bold transition-all flex flex-col items-center justify-center gap-0.5 text-slate-600 hover:text-purple-900 border border-transparent">
+              <span>Russian</span>
+              <span class="text-[10px] font-medium text-slate-400">Русский</span>
+            </button>
+            <button type="button" data-lang="Kazakh" onclick="selectResponseLanguage('Kazakh')"
+              class="lang-option px-4 py-3 rounded-xl text-xs sm:text-sm font-bold transition-all flex flex-col items-center justify-center gap-0.5 text-slate-600 hover:text-purple-900 border border-transparent">
+              <span>Kazakh</span>
+              <span class="text-[10px] font-medium text-slate-400">Қазақша</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Prominent GENERATE AI ASSESSMENT Button -->
+        <div class="pt-4 border-t border-purple-100/70 flex flex-col items-center">
+          <button type="button" id="generateAssessmentBtn" onclick="generateAIAssessment()"
+            class="w-full sm:w-auto sm:min-w-[360px] py-4 px-8 rounded-2xl btn-gradient text-white font-display font-extrabold text-base sm:text-lg tracking-wide flex items-center justify-center gap-3 shadow-glow cursor-pointer">
+            <i data-lucide="sparkles" class="w-5 h-5"></i>
+            <span>GENERATE AI ASSESSMENT</span>
+          </button>
+          <p class="text-xs text-slate-400 mt-3 text-center">
+            Powered by SANELIYAMG AI Engine &bull; Evaluates actual submitted text against every selected criterion
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========================================================= -->
+    <!-- VIEW 3: AI ASSESSMENT RESULTS – RESULTS DASHBOARD         -->
+    <!-- ========================================================= -->
+    <section id="view-results" class="view-section hidden space-y-8">
+      <!-- Top Action & Metadata Bar -->
+      <div class="bg-white rounded-3xl p-6 sm:p-7 border border-purple-100 shadow-soft flex flex-col lg:flex-row lg:items-center justify-between gap-5 no-print">
+        <div class="space-y-1.5">
+          <div class="flex flex-wrap items-center gap-2">
+            <span id="resModeBadge" class="px-3 py-1 rounded-full text-xs font-bold bg-pink-100 text-pink-800 border border-pink-200">
+              TEACHER MODE
+            </span>
+            <span id="resLangBadge" class="px-3 py-1 rounded-full text-xs font-bold bg-purple-100 text-purple-800 border border-purple-200">
+              Language: English
+            </span>
+            <span id="resDateBadge" class="text-xs text-slate-500 font-medium">
+              Nov 20, 2026
+            </span>
+          </div>
+          <h1 id="resAssignmentTitle" class="font-display text-2xl sm:text-3xl font-extrabold text-slate-900">
+            Academic Assessment Report
+          </h1>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="flex flex-wrap items-center gap-2.5">
+          <button type="button" onclick="copyAssessmentFeedback()"
+            class="px-4 py-2.5 rounded-xl bg-purple-50 hover:bg-purple-100 text-purple-900 border border-purple-200 text-xs sm:text-sm font-semibold flex items-center gap-2 transition-colors">
+            <i data-lucide="copy" class="w-4 h-4 text-purple-600"></i>
+            <span>Copy Feedback</span>
+          </button>
+
+          <button type="button" id="downloadPdfBtn" onclick="downloadAssessmentPDF()"
+            class="px-4 py-2.5 rounded-xl btn-gradient text-white text-xs sm:text-sm font-semibold flex items-center gap-2 shadow-soft">
+            <i data-lucide="download" class="w-4 h-4"></i>
+            <span>Download Assessment as PDF</span>
+          </button>
+
+          <button type="button" onclick="startNewAssessment()"
+            class="px-4 py-2.5 rounded-xl bg-pink-50 hover:bg-pink-100 text-pink-800 border border-pink-200 text-xs sm:text-sm font-semibold flex items-center gap-2 transition-colors">
+            <i data-lucide="plus-circle" class="w-4 h-4 text-pink-600"></i>
+            <span>Generate New Assessment</span>
+          </button>
+
+          <button type="button" onclick="navigateTo('workspace')"
+            class="px-4 py-2.5 rounded-xl bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 text-xs sm:text-sm font-semibold flex items-center gap-2 transition-colors">
+            <i data-lucide="arrow-left" class="w-4 h-4"></i>
+            <span>Back to Workspace</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Printable / Exportable Report Container -->
+      <div id="printableReportArea" class="space-y-6">
+        <!-- Print Header (Visible inside PDF export) -->
+        <div class="pastel-surface rounded-3xl p-6 sm:p-8 border border-pink-200/80 shadow-soft print-clean">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-purple-200/60 pb-5 mb-5">
+            <div>
+              <p class="text-xs font-extrabold tracking-wider uppercase text-pink-600">SANELIYAMG ASSESSMENT AI</p>
+              <h2 id="reportHeroTitle" class="font-display text-xl sm:text-2xl font-extrabold text-slate-900 mt-1">
+                Comprehensive Educational Evaluation
+              </h2>
+              <p id="reportMetaSubline" class="text-xs text-slate-600 mt-1"></p>
+            </div>
+            <div id="resPerformancePill" class="self-start sm:self-center px-4 py-2.5 rounded-2xl bg-white border border-purple-200 shadow-2xs text-center">
+              <span class="block text-[10px] uppercase tracking-wider font-bold text-slate-400">Overall Rating</span>
+              <span id="resOverallLevel" class="font-display font-extrabold text-sm sm:text-base text-gradient">Proficient</span>
+            </div>
+          </div>
+
+          <!-- A. Overall Assessment Summary -->
+          <div class="space-y-4">
+            <div class="flex flex-wrap items-center justify-between gap-2">
+              <div class="flex items-center gap-2">
+                <span class="w-7 h-7 rounded-lg btn-gradient text-white font-display font-bold text-xs flex items-center justify-center">A</span>
+                <h3 class="font-display text-lg sm:text-xl font-bold text-slate-900">Overall Assessment Summary</h3>
+              </div>
+              <span id="resScoreBadge" class="px-3.5 py-1 rounded-full text-xs font-extrabold bg-white text-purple-900 border border-pink-200 shadow-2xs">
+                Score: --
+              </span>
+            </div>
+            <div id="resOverallSummary" class="text-sm sm:text-base text-slate-700 leading-relaxed whitespace-pre-line space-y-3"></div>
+
+            <!-- Overall Criteria Matrix -->
+            <div id="resOverallMetricsGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 pt-2">
+              <!-- Populated dynamically -->
+            </div>
+          </div>
+        </div>
+
+        <!-- B. Selected Assessment Results -->
+        <div class="bg-white rounded-3xl p-6 sm:p-8 border border-purple-100 shadow-soft space-y-6 print-clean">
+          <div class="flex items-center justify-between border-b border-purple-100 pb-4">
+            <div class="flex items-center gap-2.5">
+              <span class="w-7 h-7 rounded-lg bg-purple-100 text-purple-800 font-display font-bold text-xs flex items-center justify-center">B</span>
+              <div>
+                <h3 class="font-display text-lg sm:text-xl font-bold text-slate-900">Selected Assessment Results</h3>
+                <p class="text-xs text-slate-500">In-depth rubric breakdowns, textual evidence, and targeted action steps for each selected framework</p>
+              </div>
+            </div>
+            <span id="resSelectedCountTag" class="px-3 py-1 rounded-full text-xs font-semibold bg-purple-50 text-purple-800 border border-purple-200">
+              0 Frameworks
+            </span>
+          </div>
+
+          <div id="resSelectedSectionsList" class="space-y-6">
+            <!-- Dynamically rendered cards for each selected assessment type -->
+          </div>
+        </div>
+
+        <!-- C. Strengths -->
+        <div class="bg-white rounded-3xl p-6 sm:p-8 border border-emerald-100 shadow-soft space-y-5 print-clean">
+          <div class="flex items-center justify-between border-b border-emerald-100/80 pb-4">
+            <div class="flex items-center gap-2.5">
+              <span class="w-7 h-7 rounded-lg bg-emerald-100 text-emerald-800 font-display font-bold text-xs flex items-center justify-center">C</span>
+              <div>
+                <h3 class="font-display text-lg sm:text-xl font-bold text-slate-900">Strengths &amp; Evidence Highlights</h3>
+                <p class="text-xs text-slate-500">Specific academic achievements backed by direct quotes from the submitted work</p>
+              </div>
+            </div>
+          </div>
+          <div id="resStrengthsList" class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm sm:text-base text-slate-700">
+            <!-- Populated dynamically -->
+          </div>
+        </div>
+
+        <!-- D. Areas for Improvement & Error Analysis -->
+        <div class="bg-white rounded-3xl p-6 sm:p-8 border border-amber-100 shadow-soft space-y-5 print-clean">
+          <div class="flex items-center justify-between border-b border-amber-100/80 pb-4">
+            <div class="flex items-center gap-2.5">
+              <span class="w-7 h-7 rounded-lg bg-amber-100 text-amber-800 font-display font-bold text-xs flex items-center justify-center">D</span>
+              <div>
+                <h3 class="font-display text-lg sm:text-xl font-bold text-slate-900">Areas for Improvement &amp; Diagnostic Revisions</h3>
+                <p class="text-xs text-slate-500">Detailed analysis of weaknesses, misconceptions, or language issues with concrete revision examples</p>
+              </div>
+            </div>
+          </div>
+          <div id="resImprovementsList" class="space-y-4 text-sm sm:text-base text-slate-700">
+            <!-- Populated dynamically -->
+          </div>
+        </div>
+
+        <!-- E. Detailed Recommendations -->
+        <div class="bg-white rounded-3xl p-6 sm:p-8 border border-pink-100 shadow-soft space-y-5 print-clean">
+          <div class="flex items-center gap-2.5 border-b border-pink-100 pb-4">
+            <span class="w-7 h-7 rounded-lg bg-pink-100 text-pink-800 font-display font-bold text-xs flex items-center justify-center">E</span>
+            <div>
+              <h3 class="font-display text-lg sm:text-xl font-bold text-slate-900">Detailed Actionable Recommendations</h3>
+              <p id="resRecommendationsSubtitle" class="text-xs text-slate-500">Phased improvement roadmap with concrete strategies and exercises</p>
+            </div>
+          </div>
+          <div id="resRecommendationsList" class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+            <!-- Populated dynamically -->
+          </div>
+        </div>
+
+        <!-- F. Final Assessment Conclusion -->
+        <div class="pastel-surface rounded-3xl p-6 sm:p-8 border border-purple-200/80 shadow-soft space-y-4 print-clean">
+          <div class="flex items-center gap-2.5">
+            <span class="w-7 h-7 rounded-lg btn-gradient text-white font-display font-bold text-xs flex items-center justify-center">F</span>
+            <h3 class="font-display text-lg sm:text-xl font-bold text-slate-900">Final Assessment Conclusion &amp; Next Milestones</h3>
+          </div>
+          <p id="resFinalConclusion" class="text-sm sm:text-base text-slate-800 leading-relaxed whitespace-pre-line font-medium"></p>
+          <div id="resNextMilestonesBox" class="pt-2 border-t border-purple-200/60">
+            <!-- Populated dynamically -->
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========================================================= -->
+    <!-- VIEW 4: ASSESSMENT HISTORY                                -->
+    <!-- ========================================================= -->
+    <section id="view-history" class="view-section hidden space-y-6">
+      <div class="bg-white rounded-3xl p-6 sm:p-8 border border-purple-100 shadow-soft flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <span class="px-3 py-1 rounded-full text-xs font-bold bg-pink-50 text-pink-700 border border-pink-200">
+            Saved Evaluations
+          </span>
+          <h1 class="font-display text-2xl sm:text-3xl font-extrabold text-slate-900 mt-2">
+            Assessment History
+          </h1>
+          <p class="text-sm text-slate-500 mt-1">
+            Revisit previous AI evaluations, review feedback reports, or export them as PDFs.
+          </p>
+        </div>
+
+        <button type="button" onclick="navigateTo('workspace')"
+          class="px-5 py-3 rounded-2xl btn-gradient text-white text-xs sm:text-sm font-semibold flex items-center gap-2 shadow-soft self-start sm:self-center">
+          <i data-lucide="plus" class="w-4 h-4"></i>
+          <span>New Assessment</span>
+        </button>
+      </div>
+
+      <!-- Empty State -->
+      <div id="historyEmptyState" class="hidden bg-white rounded-3xl p-10 sm:p-14 border border-purple-100 shadow-soft text-center space-y-4">
+        <div class="w-16 h-16 mx-auto rounded-2xl bg-gradient-to-br from-pink-100 to-purple-100 border border-pink-200 flex items-center justify-center text-purple-600">
+          <i data-lucide="history" class="w-8 h-8"></i>
+        </div>
+        <h3 class="font-display text-xl font-bold text-slate-900">No Assessments Yet</h3>
+        <p class="text-sm text-slate-500 max-w-md mx-auto">
+          Your completed evaluations will automatically appear here so you can access or download them anytime.
+        </p>
+        <div class="pt-2">
+          <button type="button" onclick="navigateTo('workspace')"
+            class="px-6 py-3 rounded-2xl btn-gradient text-white text-sm font-semibold inline-flex items-center gap-2 shadow-soft">
+            <span>Go to Assessment Workspace</span>
+            <i data-lucide="arrow-right" class="w-4 h-4"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- History List -->
+      <div id="historyListContainer" class="space-y-4"></div>
+    </section>
+
+    <!-- ========================================================= -->
+    <!-- VIEW 5: ABOUT                                             -->
+    <!-- ========================================================= -->
+    <section id="view-about" class="view-section hidden space-y-6">
+      <div class="pastel-surface rounded-3xl p-7 sm:p-10 border border-pink-200/70 shadow-soft space-y-4">
+        <span class="px-3 py-1 rounded-full text-xs font-bold bg-white text-purple-800 border border-purple-200">
+          About the Platform
+        </span>
+        <h1 class="font-display text-2xl sm:text-4xl font-extrabold text-slate-900">
+          About <span class="text-gradient">SANELIYAMG ASSESSMENT AI</span>
+        </h1>
+        <p class="text-sm sm:text-base text-slate-600 leading-relaxed max-w-3xl">
+          SANELIYAMG ASSESSMENT AI is an intelligent educational assessment and feedback platform designed to bridge pedagogical rigor with personalized learning support. Built for both educators and students, it evaluates authentic academic assignments across nine established assessment frameworks and delivers structured, constructive feedback in English, Russian, and Kazakh.
+        </p>
+      </div>
+
+      <div class="bg-white rounded-3xl p-6 sm:p-8 border border-purple-100 shadow-soft space-y-5">
+        <h2 class="font-display text-xl font-bold text-slate-900">Supported Assessment Frameworks</h2>
+        <div id="aboutFrameworksList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <!-- Populated dynamically -->
+        </div>
+      </div>
+    </section>
+
+    <!-- ========================================================= -->
+    <!-- VIEW 6: SETTINGS                                          -->
+    <!-- ========================================================= -->
+    <section id="view-settings" class="view-section hidden space-y-6 max-w-4xl mx-auto">
+      <div class="bg-white rounded-3xl p-6 sm:p-8 border border-purple-100 shadow-soft space-y-6">
+        <div class="border-b border-purple-100 pb-4">
+          <h1 class="font-display text-2xl font-extrabold text-slate-900">Platform Settings &amp; Preferences</h1>
+          <p class="text-sm text-slate-500 mt-1">Customize your default workspace behavior and feedback preferences.</p>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+          <div class="space-y-2">
+            <label for="settingDefaultMode" class="block font-display font-bold text-sm text-slate-800">
+              Default Startup Mode
+            </label>
+            <select id="settingDefaultMode" onchange="saveSettingsFromUI()"
+              class="w-full rounded-xl border border-purple-200 bg-purple-50/30 px-4 py-2.5 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-purple-300">
+              <option value="welcome">Show Welcome Screen (Choose Mode)</option>
+              <option value="teacher">Teacher Mode</option>
+              <option value="student">Student Mode</option>
+            </select>
+          </div>
+
+          <div class="space-y-2">
+            <label for="settingDefaultLang" class="block font-display font-bold text-sm text-slate-800">
+              Default AI Response Language
+            </label>
+            <select id="settingDefaultLang" onchange="saveSettingsFromUI()"
+              class="w-full rounded-xl border border-purple-200 bg-purple-50/30 px-4 py-2.5 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-purple-300">
+              <option value="English">English</option>
+              <option value="Russian">Russian (Русский)</option>
+              <option value="Kazakh">Kazakh (Қазақша)</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="space-y-3 pt-2">
+          <label class="block font-display font-bold text-sm text-slate-800">
+            Default Assessment Type Presets
+          </label>
+          <p class="text-xs text-slate-500">Choose which assessment approaches are pre-selected when you open the workspace.</p>
+          <div id="settingsPresetsGrid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5">
+            <!-- Populated dynamically -->
+          </div>
+        </div>
+
+        <div class="pt-6 border-t border-purple-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <h3 class="font-display font-bold text-sm text-slate-900">Clear Local Assessment History</h3>
+            <p class="text-xs text-slate-500">Remove all previously saved assessment reports stored in this browser.</p>
+          </div>
+          <div id="clearHistoryControl">
+            <button type="button" onclick="promptClearHistory()"
+              class="px-4 py-2.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-xs sm:text-sm font-semibold flex items-center gap-2 transition-colors">
+              <i data-lucide="trash-2" class="w-4 h-4"></i>
+              <span>Clear Assessment History</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Footer -->
+  <footer class="border-t border-purple-100/80 bg-white/70 backdrop-blur-xs py-6 mt-12 no-print">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-500">
+      <div class="flex items-center gap-2">
+        <span class="font-display font-bold text-gradient">SANELIYAMG ASSESSMENT AI</span>
+        <span>&bull;</span>
+        <span>Educational Assessment &amp; Feedback Platform</span>
+      </div>
+      <div>
+        Designed for Teachers &amp; Students &bull; English, Russian &amp; Kazakh Feedback Support
+      </div>
+    </div>
+  </footer>
+
+  <!-- ========================================================= -->
+  <!-- ANIMATED LOADING MODAL OVERLAY                            -->
+  <!-- ========================================================= -->
+  <div id="loadingOverlay" class="hidden fixed inset-0 z-50 bg-slate-950/45 backdrop-blur-md flex items-center justify-center p-4 no-print">
+    <div class="bg-white rounded-3xl max-w-md w-full p-8 border border-pink-200 shadow-glow text-center space-y-6">
+      <div class="relative w-20 h-20 mx-auto rounded-full btn-gradient flex items-center justify-center text-white pulse-ring">
+        <i data-lucide="sparkles" class="w-9 h-9 animate-pulse"></i>
+      </div>
+
+      <div class="space-y-2">
+        <span class="inline-block px-3 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider bg-purple-100 text-purple-800">
+          SANELIYAMG AI Engine
+        </span>
+        <h3 id="loadingStatusMessage" class="font-display text-xl font-extrabold text-slate-900 min-h-[28px]">
+          Analyzing your assignment...
+        </h3>
+        <p class="text-xs sm:text-sm text-slate-500">
+          Evaluating content depth, structure, and learning criteria in <span id="loadingTargetLang" class="font-semibold text-purple-700">English</span>.
+        </p>
+      </div>
+
+      <!-- Progress Step Pills -->
+      <div class="space-y-2 text-left bg-purple-50/60 rounded-2xl p-4 border border-purple-100">
+        <div id="stepIndicator0" class="flex items-center gap-2.5 text-xs font-semibold text-purple-900">
+          <span class="w-2 h-2 rounded-full bg-pink-500 animate-ping"></span>
+          <span>Analyzing your assignment...</span>
+        </div>
+        <div id="stepIndicator1" class="flex items-center gap-2.5 text-xs font-medium text-slate-400">
+          <span class="w-2 h-2 rounded-full bg-slate-300"></span>
+          <span>Evaluating learning outcomes...</span>
+        </div>
+        <div id="stepIndicator2" class="flex items-center gap-2.5 text-xs font-medium text-slate-400">
+          <span class="w-2 h-2 rounded-full bg-slate-300"></span>
+          <span>Identifying strengths and areas for improvement...</span>
+        </div>
+        <div id="stepIndicator3" class="flex items-center gap-2.5 text-xs font-medium text-slate-400">
+          <span class="w-2 h-2 rounded-full bg-slate-300"></span>
+          <span>Preparing your personalized feedback...</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================= -->
+  <!-- APPLICATION JAVASCRIPT                                    -->
+  <!-- ========================================================= -->
+  <script>
+    // =========================================================================
+    // 1. CONSTANTS & PEDAGOGICAL ASSESSMENT DEFINITIONS
+    // =========================================================================
+    const ASSESSMENT_TYPES = [
+      {
+        id: 'formative',
+        title: 'Formative Assessment',
+        icon: 'trending-up',
+        description: "Evaluates students' ongoing learning progress, identifies learning gaps, monitors development, and provides recommendations for further improvement."
+      },
+      {
+        id: 'summative',
+        title: 'Summative Assessment',
+        icon: 'award',
+        description: "Evaluates students' overall achievement and learning outcomes at the end of a unit, course, lesson, or learning activity."
+      },
+      {
+        id: 'content',
+        title: 'Content Assessment',
+        icon: 'book-open',
+        description: "Evaluates the accuracy, relevance, depth, completeness, and understanding of subject-specific content."
+      },
+      {
+        id: 'language',
+        title: 'Language Assessment',
+        icon: 'languages',
+        description: "Analyzes grammar, vocabulary, spelling, punctuation, sentence structure, coherence, fluency, and overall language proficiency."
+      },
+      {
+        id: 'cognitive',
+        title: 'Cognitive Assessment',
+        icon: 'brain',
+        description: "Evaluates students' cognitive abilities, including critical thinking, analytical skills, creativity, interpretation, problem-solving, application of knowledge, and higher-order thinking skills."
+      },
+      {
+        id: 'feedback',
+        title: 'Feedback',
+        icon: 'message-square-heart',
+        description: "Generates detailed, constructive, and personalized feedback highlighting students' strengths, weaknesses, mistakes, and practical suggestions for improvement."
+      },
+      {
+        id: 'self_assessment',
+        title: 'Self-Assessment',
+        icon: 'user-check',
+        description: "Provides self-evaluation criteria and reflective questions that help students independently analyze their own performance, recognize their achievements, and identify areas for improvement."
+      },
+      {
+        id: 'peer_assessment',
+        title: 'Peer Assessment',
+        icon: 'users',
+        description: "Evaluates student work using peer-review criteria. It helps identify strengths and weaknesses from another learner's perspective and encourages collaborative learning."
+      },
+      {
+        id: 'clil_rubrics',
+        title: 'CLIL Rubrics',
+        icon: 'compass',
+        description: "Evaluates student performance through CLIL-specific assessment criteria based on the 4Cs Framework: Content (Subject knowledge and understanding), Communication (Language use and communication skills), Cognition (Thinking skills, analysis, and problem-solving), and Culture (Cultural awareness and intercultural understanding). Evaluates both subject knowledge and language development."
+      }
+    ];
+
+    const LOADING_MESSAGES = [
+      "Analyzing your assignment...",
+      "Evaluating learning outcomes...",
+      "Identifying strengths and areas for improvement...",
+      "Preparing your personalized feedback..."
+    ];
+
+    const STORAGE_KEYS = {
+      HISTORY: 'saneliyamg_assessment_history_v1',
+      SETTINGS: 'saneliyamg_assessment_settings_v1'
+    };
+
+    // =========================================================================
+    // 2. APPLICATION STATE
+    // =========================================================================
+    const state = {
+      currentView: 'home',
+      mode: 'teacher', // 'teacher' | 'student'
+      selectedAssessments: ['formative', 'content', 'feedback'],
+      submissionTab: 'file', // 'file' | 'text'
+      uploadedFile: {
+        name: '',
+        format: '',
+        extractedText: '',
+        wordCount: 0
+      },
+      responseLanguage: 'English', // 'English' | 'Russian' | 'Kazakh'
+      currentReport: null,
+      history: [],
+      settings: {
+        defaultMode: 'welcome',
+        defaultLanguage: 'English',
+        defaultAssessments: ['formative', 'content', 'feedback']
+      },
+      loadingInterval: null
+    };
+
+    // =========================================================================
+    // 3. INITIALIZATION
+    // =========================================================================
+    window.addEventListener('DOMContentLoaded', () => {
+      loadSettingsFromStorage();
+      loadHistoryFromStorage();
+
+      // Apply saved defaults
+      state.responseLanguage = state.settings.defaultLanguage || 'English';
+      state.selectedAssessments = Array.isArray(state.settings.defaultAssessments)
+        ? [...state.settings.defaultAssessments]
+        : ['formative', 'content', 'feedback'];
+
+      if (state.settings.defaultMode === 'teacher' || state.settings.defaultMode === 'student') {
+        state.mode = state.settings.defaultMode;
+      }
+
+      renderAssessmentCards();
+      renderAboutFrameworks();
+      renderSettingsUI();
+      setupFileDropZone();
+      updateModeUI();
+      updateLanguageUI();
+      updateHistoryBadges();
+
+      // Navigate to startup view based on setting
+      if (state.settings.defaultMode === 'teacher' || state.settings.defaultMode === 'student') {
+        navigateTo('workspace');
+      } else {
+        navigateTo('home');
+      }
+
+      refreshIcons();
+    });
+
+    function refreshIcons() {
+      if (window.lucide) {
+        window.lucide.createIcons();
+      }
+    }
+
+    // =========================================================================
+    // 4. NAVIGATION & MODE SWITCHING
+    // =========================================================================
+    function navigateTo(viewName) {
+      state.currentView = viewName;
+      document.querySelectorAll('.view-section').forEach(sec => sec.classList.add('hidden'));
+      const target = document.getElementById(`view-${viewName}`);
+      if (target) {
+        target.classList.remove('hidden');
+      }
+
+      // Highlight active nav buttons
+      document.querySelectorAll('.nav-btn').forEach(btn => {
+        const isActive = btn.dataset.nav === viewName || (viewName === 'results' && btn.dataset.nav === 'workspace');
+        if (isActive) {
+          btn.classList.add('bg-white', 'text-purple-900', 'font-semibold', 'shadow-2xs');
+          btn.classList.remove('text-slate-600');
+        } else {
+          btn.classList.remove('bg-white', 'text-purple-900', 'font-semibold', 'shadow-2xs');
+          btn.classList.add('text-slate-600');
+        }
+      });
+
+      document.querySelectorAll('.nav-btn-mobile').forEach(btn => {
+        const isActive = btn.dataset.nav === viewName;
+        btn.classList.toggle('bg-purple-50', isActive);
+        btn.classList.toggle('text-purple-900', isActive);
+        btn.classList.toggle('font-semibold', isActive);
+      });
+
+      if (viewName === 'history') {
+        renderHistoryView();
+      }
+
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      refreshIcons();
+    }
+
+    function toggleMobileMenu(forceState) {
+      const menu = document.getElementById('mobileMenu');
+      if (typeof forceState === 'boolean') {
+        menu.classList.toggle('hidden', !forceState);
+      } else {
+        menu.classList.toggle('hidden');
+      }
+    }
+
+    function selectModeAndEnter(mode) {
+      state.mode = mode;
+      updateModeUI();
+      navigateTo('workspace');
+      showToast(`Entered ${mode === 'teacher' ? 'Teacher' : 'Student'} Mode`, 'info');
+    }
+
+    function toggleMode() {
+      state.mode = state.mode === 'teacher' ? 'student' : 'teacher';
+      updateModeUI();
+      showToast(`Switched to ${state.mode === 'teacher' ? 'Teacher' : 'Student'} Mode`, 'info');
+    }
+
+    function updateModeUI() {
+      const isTeacher = state.mode === 'teacher';
+
+      // Header badge
+      const headerDot = document.getElementById('headerModeDot');
+      const headerLabel = document.getElementById('headerModeLabel');
+      headerDot.className = `w-2 h-2 rounded-full ${isTeacher ? 'bg-pink-500' : 'bg-purple-500'}`;
+      headerLabel.textContent = isTeacher ? 'Teacher Mode' : 'Student Mode';
+
+      // Workspace banner
+      document.getElementById('workspaceModeTitle').textContent = isTeacher
+        ? 'Teacher Assessment Workspace'
+        : 'Student Learning & Self-Review Workspace';
+
+      const pill = document.getElementById('workspaceModePill');
+      pill.textContent = isTeacher ? 'TEACHER MODE' : 'STUDENT MODE';
+      pill.className = isTeacher
+        ? 'px-2.5 py-0.5 rounded-full text-xs font-semibold bg-pink-100 text-pink-800 border border-pink-200'
+        : 'px-2.5 py-0.5 rounded-full text-xs font-semibold bg-purple-100 text-purple-800 border border-purple-200';
+
+      document.getElementById('workspaceModeSubtitle').textContent = isTeacher
+        ? 'Evaluate student assignments, analyze learning outcomes, and generate rubric-aligned constructive feedback.'
+        : 'Analyze your assignment, understand mistakes clearly, and discover practical steps to improve your work.';
+
+      document.getElementById('workspaceSwitchBtnText').textContent = isTeacher
+        ? 'Switch to Student Mode'
+        : 'Switch to Teacher Mode';
+
+      const iconEl = document.getElementById('workspaceModeIcon');
+      iconEl.setAttribute('data-lucide', isTeacher ? 'graduation-cap' : 'book-open-check');
+
+      // Adaptive hints in Upload & Context sections
+      document.getElementById('uploadSectionHint').textContent = isTeacher
+        ? 'Upload a student document (PDF, DOC, DOCX) or paste/type the assignment text directly below.'
+        : 'Upload your draft or completed assignment (PDF, DOC, DOCX) or paste/type your text directly below.';
+
+      document.getElementById('contextSectionSubtitle').textContent = isTeacher
+        ? 'Provide task expectations, curriculum learning objectives, or specific rubric criteria for the AI.'
+        : 'Optional: Paste your assignment prompt or teacher’s grading criteria so the AI can check if you met every requirement.';
+
+      document.getElementById('taskReqHelper').textContent = isTeacher
+        ? 'What were students expected to do? What instructions, conditions, or assessment criteria were provided?'
+        : 'What did your teacher ask you to do? Paste the assignment instructions or grading criteria if available.';
+
+      document.getElementById('learningObjHelper').textContent = isTeacher
+        ? 'What knowledge, skills, competencies, or learning outcomes should students demonstrate?'
+        : 'What key concepts, skills, or learning goals are you trying to demonstrate in this work?';
+
+      refreshIcons();
+    }
+
+    // =========================================================================
+    // 5. ASSESSMENT TYPE SELECTION (9 FRAMEWORKS)
+    // =========================================================================
+    function renderAssessmentCards() {
+      const grid = document.getElementById('assessmentCardsGrid');
+      grid.innerHTML = ASSESSMENT_TYPES.map(item => {
+        const isSelected = state.selectedAssessments.includes(item.id);
+        return `
+          <div onclick="toggleAssessmentType('${item.id}')"
+            role="checkbox"
+            aria-checked="${isSelected}"
+            tabindex="0"
+            onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleAssessmentType('${item.id}');}"
+            class="cursor-pointer rounded-2xl p-5 border transition-all duration-200 flex flex-col justify-between select-none ${
+              isSelected
+                ? 'card-selected border-fuchsia-400'
+                : 'bg-white border-purple-100 hover:border-pink-300 hover:bg-pink-50/20'
+            }">
+            <div class="space-y-3">
+              <div class="flex items-start justify-between gap-3">
+                <div class="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 transition-colors ${
+                  isSelected
+                    ? 'btn-gradient text-white shadow-2xs'
+                    : 'bg-purple-50 text-purple-600 border border-purple-100'
+                }">
+                  <i data-lucide="${item.icon}" class="w-5 h-5"></i>
+                </div>
+
+                <div class="w-6 h-6 rounded-full flex items-center justify-center border transition-all shrink-0 ${
+                  isSelected
+                    ? 'bg-pink-600 border-pink-600 text-white'
+                    : 'border-slate-300 bg-white text-transparent'
+                }">
+                  <i data-lucide="check" class="w-3.5 h-3.5"></i>
+                </div>
+              </div>
+
+              <div>
+                <h3 class="font-display font-bold text-base text-slate-900">${item.title}</h3>
+                <p class="text-xs text-slate-600 leading-relaxed mt-1.5">${item.description}</p>
+              </div>
+            </div>
+
+            <div class="pt-3 mt-3 border-t border-purple-100/60 flex items-center justify-between text-[11px] font-semibold">
+              <span class="${isSelected ? 'text-pink-700' : 'text-slate-400'}">
+                ${isSelected ? 'Included in evaluation' : 'Click to select'}
+              </span>
+              ${item.id === 'clil_rubrics' ? '<span class="px-2 py-0.5 rounded-md bg-purple-100 text-purple-800">4Cs Framework</span>' : ''}
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      updateSelectedCounter();
+      refreshIcons();
+    }
+
+    function toggleAssessmentType(id) {
+      const idx = state.selectedAssessments.indexOf(id);
+      if (idx > -1) {
+        state.selectedAssessments.splice(idx, 1);
+      } else {
+        state.selectedAssessments.push(id);
+      }
+      renderAssessmentCards();
+    }
+
+    function selectAllAssessments() {
+      state.selectedAssessments = ASSESSMENT_TYPES.map(a => a.id);
+      renderAssessmentCards();
+    }
+
+    function clearAllAssessments() {
+      state.selectedAssessments = [];
+      renderAssessmentCards();
+    }
+
+    function updateSelectedCounter() {
+      const count = state.selectedAssessments.length;
+      document.getElementById('selectedCountBadge').textContent = `${count} of ${ASSESSMENT_TYPES.length} selected`;
+
+      const bar = document.getElementById('selectedPillsBar');
+      const list = document.getElementById('selectedPillsList');
+      if (count === 0) {
+        bar.classList.add('hidden');
+        list.innerHTML = '';
+      } else {
+        bar.classList.remove('hidden');
+        list.innerHTML = state.selectedAssessments.map(id => {
+          const found = ASSESSMENT_TYPES.find(a => a.id === id);
+          return found
+            ? `<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-pink-50 text-pink-800 border border-pink-200">
+                ${found.title}
+                <button type="button" onclick="toggleAssessmentType('${id}')" class="hover:text-pink-950 ml-0.5">&times;</button>
+               </span>`
+            : '';
+        }).join('');
+      }
+    }
+
+    // =========================================================================
+    // 6. UPLOAD YOUR WORK (FILE PARSING & DIRECT TEXT)
+    // =========================================================================
+    function switchSubmissionTab(tab) {
+      state.submissionTab = tab;
+      const isFile = tab === 'file';
+
+      const tabUpload = document.getElementById('tabUploadDoc');
+      const tabText = document.getElementById('tabEnterText');
+      const panelUpload = document.getElementById('panelUploadDoc');
+      const panelText = document.getElementById('panelEnterText');
+
+      if (isFile) {
+        tabUpload.className = 'px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all flex items-center gap-2 bg-white text-purple-900 shadow-2xs';
+        tabText.className = 'px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all flex items-center gap-2 text-slate-600 hover:text-purple-900';
+        panelUpload.classList.remove('hidden');
+        panelText.classList.add('hidden');
+      } else {
+        tabText.className = 'px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all flex items-center gap-2 bg-white text-purple-900 shadow-2xs';
+        tabUpload.className = 'px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all flex items-center gap-2 text-slate-600 hover:text-purple-900';
+        panelText.classList.remove('hidden');
+        panelUpload.classList.add('hidden');
+      }
+    }
+
+    function triggerFilePicker() {
+      const fileInput = document.getElementById('fileInput');
+      if (!fileInput) return;
+      fileInput.value = '';
+      fileInput.click();
+    }
+
+    function setupFileDropZone() {
+      const dropZone = document.getElementById('dropZone');
+      const fileInput = document.getElementById('fileInput');
+
+      // Prevent browser from opening dropped files anywhere in the window
+      ['dragover', 'drop'].forEach(evtName => {
+        window.addEventListener(evtName, (e) => {
+          e.preventDefault();
+        }, false);
+      });
+
+      dropZone.addEventListener('click', (e) => {
+        if (e.target.closest('button')) return;
+        triggerFilePicker();
+      });
+
+      ['dragenter', 'dragover'].forEach(evtName => {
+        dropZone.addEventListener(evtName, (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          dropZone.classList.add('border-purple-500', 'bg-purple-50/60');
+        });
+      });
+
+      ['dragleave', 'drop'].forEach(evtName => {
+        dropZone.addEventListener(evtName, (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          dropZone.classList.remove('border-purple-500', 'bg-purple-50/60');
+        });
+      });
+
+      dropZone.addEventListener('drop', (e) => {
+        const files = e.dataTransfer?.files;
+        if (files && files.length > 0) {
+          handleUploadedFile(files[0]);
+        }
+      });
+
+      fileInput.addEventListener('change', (e) => {
+        if (e.target.files && e.target.files.length > 0) {
+          const selectedFile = e.target.files[0];
+          handleUploadedFile(selectedFile);
+        }
+      });
+    }
+
+    async function handleUploadedFile(file) {
+      const fileName = file.name || 'document';
+      const ext = fileName.includes('.') ? fileName.split('.').pop().toLowerCase() : '';
+      const supportedExts = ['pdf', 'doc', 'docx', 'txt', 'md', 'rtf', 'csv'];
+
+      if (!supportedExts.includes(ext)) {
+        showWorkspaceError(
+          'Unsupported File Format',
+          'Please upload a PDF (.pdf), Word (.doc, .docx), or text (.txt, .md, .rtf) file, or switch to Option B to paste your text.'
+        );
+        return;
+      }
+
+      hideWorkspaceError();
+      const card = document.getElementById('uploadedFileCard');
+      const statusEl = document.getElementById('uploadedFileStatus');
+      const previewBox = document.getElementById('extractedPreviewBox');
+      const previewLabel = document.getElementById('previewToggleLabel');
+
+      card.classList.remove('hidden');
+      previewBox.classList.remove('hidden');
+      previewLabel.textContent = 'Hide Text';
+
+      document.getElementById('uploadedFileName').textContent = fileName;
+      document.getElementById('uploadedFileFormat').textContent = ext.toUpperCase();
+      document.getElementById('extractedFileText').value = '';
+      document.getElementById('extractedPreviewStats').textContent = 'Extracting...';
+
+      statusEl.innerHTML = `<i data-lucide="loader-2" class="w-3.5 h-3.5 animate-spin text-purple-600"></i><span class="text-purple-700">Extracting text from ${escapeHTML(ext.toUpperCase())} document...</span>`;
+      refreshIcons();
+
+      try {
+        let extracted = '';
+        let warningNote = '';
+
+        if (ext === 'pdf') {
+          extracted = await extractTextFromPDF(file);
+        } else if (ext === 'docx') {
+          extracted = await extractTextFromDOCX(file);
+        } else if (ext === 'doc') {
+          const docRes = await extractTextFromLegacyDOC(file);
+          extracted = docRes.text;
+          warningNote = docRes.warning || '';
+        } else if (ext === 'rtf') {
+          const rawText = await readTextWithEncodingFallback(file);
+          extracted = stripRTF(rawText);
+        } else {
+          // .txt, .md, .csv
+          extracted = await readTextWithEncodingFallback(file);
+        }
+
+        const normalized = normalizeExtractedText(extracted);
+        const words = normalized ? normalized.split(/\s+/).length : 0;
+
+        state.uploadedFile = {
+          name: fileName,
+          format: ext.toUpperCase(),
+          extractedText: normalized,
+          wordCount: words
+        };
+
+        document.getElementById('extractedFileText').value = normalized;
+        document.getElementById('extractedPreviewStats').textContent = `${words.toLocaleString()} words \u2022 ${normalized.length.toLocaleString()} characters`;
+
+        // Also pre-fill assignment title if empty
+        const titleInput = document.getElementById('assignmentTitleInput');
+        if (titleInput && !titleInput.value.trim()) {
+          titleInput.value = fileName.replace(/\.[^/.]+$/, '');
+        }
+
+        if (words > 0) {
+          const noteSuffix = warningNote ? ` (${warningNote})` : '';
+          statusEl.innerHTML = `<i data-lucide="check-circle" class="w-3.5 h-3.5 text-emerald-600"></i><span class="text-emerald-700">Ready &bull; ${words.toLocaleString()} words extracted${escapeHTML(noteSuffix)}</span>`;
+          showToast(`Extracted ${words.toLocaleString()} words from ${fileName}`, 'success');
+        } else {
+          statusEl.innerHTML = `<i data-lucide="alert-triangle" class="w-3.5 h-3.5 text-amber-600"></i><span class="text-amber-700">No selectable text detected (e.g. scanned image PDF). Paste your text in the box below or Option B.</span>`;
+          showToast('No selectable text found in file — you can paste text directly below.', 'error');
+        }
+      } catch (err) {
+        console.error('File parsing error:', err);
+        state.uploadedFile = { name: fileName, format: ext.toUpperCase(), extractedText: '', wordCount: 0 };
+        document.getElementById('extractedPreviewStats').textContent = '0 words';
+        statusEl.innerHTML = `<i data-lucide="alert-circle" class="w-3.5 h-3.5 text-rose-600"></i><span class="text-rose-700">Extraction issue: ${escapeHTML(err.message || 'Please paste text below or use Option B.')}</span>`;
+        showToast('Could not extract text automatically. Paste text below or in Option B.', 'error');
+      }
+
+      refreshIcons();
+    }
+
+    function normalizeExtractedText(text) {
+      return String(text || '')
+        .replace(/\u0000/g, '')
+        .replace(/\r\n/g, '\n')
+        .replace(/\r/g, '\n')
+        .replace(/[ \t]+\n/g, '\n')
+        .replace(/\n{3,}/g, '\n\n')
+        .trim();
+    }
+
+    async function readTextWithEncodingFallback(file) {
+      const buffer = await file.arrayBuffer();
+      const utf8Text = new TextDecoder('utf-8', { fatal: false }).decode(buffer);
+      // If UTF-8 produced replacement characters (\uFFFD), retry with Windows-1251 (Cyrillic)
+      if (utf8Text.includes('\uFFFD')) {
+        try {
+          return new TextDecoder('windows-1251', { fatal: false }).decode(buffer);
+        } catch (_) {
+          return utf8Text;
+        }
+      }
+      return utf8Text;
+    }
+
+    function stripRTF(rtf) {
+      if (!rtf || !rtf.trim().startsWith('{\\rtf')) return rtf;
+      let text = rtf
+        // Decode hex-escaped characters like \'e0 (Windows-1251 / Windows-1252)
+        .replace(/\\'([0-9a-fA-F]{2})/g, (_, hex) => {
+          const byte = parseInt(hex, 16);
+          try {
+            return new TextDecoder('windows-1251').decode(new Uint8Array([byte]));
+          } catch (_) {
+            return String.fromCharCode(byte);
+          }
+        })
+        // Decode unicode escapes like \u1040?
+        .replace(/\\u(-?\d+)\??/g, (_, code) => {
+          const n = parseInt(code, 10);
+          return String.fromCharCode(n < 0 ? n + 65536 : n);
+        })
+        .replace(/\\par[d]?/g, '\n')
+        .replace(/\\line/g, '\n')
+        .replace(/\\tab/g, '\t')
+        .replace(/\{\\\*\\[^}]+\}/g, '')
+        .replace(/\\[a-zA-Z]+-?\d* ?/g, '')
+        .replace(/[{}]/g, '');
+      return text;
+    }
+
+    async function extractTextFromPDF(file) {
+      if (!window.pdfjsLib) {
+        throw new Error('PDF parser library did not load. Please check your connection or paste text.');
+      }
+
+      const arrayBuffer = await file.arrayBuffer();
+      let pdf;
+
+      try {
+        // First try with worker enabled
+        const loadingTask = window.pdfjsLib.getDocument({ data: new Uint8Array(arrayBuffer) });
+        pdf = await loadingTask.promise;
+      } catch (workerErr) {
+        // Fallback for sandboxed/CSP iframes where external WebWorker scripts are blocked
+        console.warn('PDF.js worker failed, retrying with disableWorker: true', workerErr);
+        const fallbackTask = window.pdfjsLib.getDocument({
+          data: new Uint8Array(arrayBuffer),
+          disableWorker: true
+        });
+        pdf = await fallbackTask.promise;
+      }
+
+      const pageTexts = [];
+      for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+        const page = await pdf.getPage(pageNum);
+        const textContent = await page.getTextContent();
+        const items = textContent.items || [];
+
+        let pageStr = '';
+        let lastY = null;
+
+        for (const item of items) {
+          if (!item || typeof item.str !== 'string') continue;
+          const currentY = Array.isArray(item.transform) ? item.transform[5] : null;
+          if (lastY !== null && currentY !== null && Math.abs(currentY - lastY) > 6) {
+            pageStr += '\n';
+          } else if (pageStr && !pageStr.endsWith(' ') && !pageStr.endsWith('\n') && !item.str.startsWith(' ')) {
+            pageStr += ' ';
+          }
+          pageStr += item.str;
+          if (currentY !== null) lastY = currentY;
+        }
+
+        if (pageStr.trim()) {
+          pageTexts.push(pageStr.trim());
+        }
+      }
+
+      return pageTexts.join('\n\n');
+    }
+
+    async function extractTextFromDOCX(file) {
+      const arrayBuffer = await file.arrayBuffer();
+
+      // Primary: Mammoth.js
+      if (window.mammoth) {
+        try {
+          const result = await window.mammoth.extractRawText({ arrayBuffer: arrayBuffer.slice(0) });
+          if (result && result.value && result.value.trim().length > 0) {
+            return result.value;
+          }
+        } catch (mammothErr) {
+          console.warn('Mammoth DOCX extraction fell back to JSZip XML parser:', mammothErr);
+        }
+      }
+
+      // Secondary Fallback: JSZip reading word/document.xml directly
+      if (window.JSZip) {
+        const zip = await window.JSZip.loadAsync(arrayBuffer);
+        const docXmlFile = zip.file('word/document.xml');
+        if (!docXmlFile) {
+          throw new Error('Invalid DOCX archive: word/document.xml not found.');
+        }
+        const xmlStr = await docXmlFile.async('string');
+        const parser = new DOMParser();
+        const xmlDoc = parser.parseFromString(xmlStr, 'application/xml');
+        const paragraphs = Array.from(xmlDoc.getElementsByTagNameNS('*', 'p'));
+        const lines = paragraphs.map(p => {
+          const texts = Array.from(p.getElementsByTagNameNS('*', 't')).map(t => t.textContent || '');
+          return texts.join('');
+        });
+        return lines.join('\n');
+      }
+
+      throw new Error('DOCX extraction library unavailable.');
+    }
+
+    async function extractTextFromLegacyDOC(file) {
+      const arrayBuffer = await file.arrayBuffer();
+
+      // Case 1: Some .doc files are actually renamed .docx (PK zip header)
+      const headerBytes = new Uint8Array(arrayBuffer.slice(0, 4));
+      if (headerBytes[0] === 0x50 && headerBytes[1] === 0x4B) {
+        const docxText = await extractTextFromDOCX(file);
+        return { text: docxText, warning: '' };
+      }
+
+      // Case 2: Some .doc files are RTF or HTML saved with a .doc extension
+      const utf8Probe = new TextDecoder('utf-8', { fatal: false }).decode(arrayBuffer);
+      if (utf8Probe.trimStart().startsWith('{\\rtf')) {
+        return { text: stripRTF(utf8Probe), warning: '' };
+      }
+      if (/<html[\s>]/i.test(utf8Probe.slice(0, 500))) {
+        const doc = new DOMParser().parseFromString(utf8Probe, 'text/html');
+        return { text: doc.body ? doc.body.innerText : '', warning: '' };
+      }
+
+      // Case 3: Binary OLE2 .doc — extract both UTF-16LE Unicode runs and Windows-1251/1252 runs
+      const bytes = new Uint8Array(arrayBuffer);
+      const segments = [];
+
+      // Scan UTF-16LE runs (supports English, Russian Cyrillic, Kazakh Cyrillic)
+      let currentU16 = '';
+      for (let i = 0; i + 1 < bytes.length; i += 2) {
+        const code = bytes[i] | (bytes[i + 1] << 8);
+        const isPrintable =
+          (code >= 0x0020 && code <= 0x007E) ||
+          (code >= 0x0400 && code <= 0x04FF) ||
+          code === 0x000A || code === 0x000D || code === 0x0009 ||
+          code === 0x2013 || code === 0x2014 || code === 0x2019 || code === 0x201C || code === 0x201D;
+        if (isPrintable) {
+          currentU16 += String.fromCharCode(code);
+        } else {
+          if (currentU16.trim().length >= 25) {
+            segments.push(currentU16.trim());
+          }
+          currentU16 = '';
+        }
+      }
+      if (currentU16.trim().length >= 25) {
+        segments.push(currentU16.trim());
+      }
+
+      // If minimal UTF-16LE found, also extract single-byte Windows-1251 runs
+      if (segments.join(' ').length < 60) {
+        const win1251 = new TextDecoder('windows-1251', { fatal: false }).decode(bytes);
+        const singleByteMatches = win1251.match(/[A-Za-zА-Яа-яӘәҒғҚқҢңӨөҰұҮүҺһІі0-9.,;:!?'"()\-\s]{25,}/g) || [];
+        singleByteMatches.forEach(m => {
+          const cleaned = m.trim();
+          if (cleaned && !segments.includes(cleaned)) {
+            segments.push(cleaned);
+          }
+        });
+      }
+
+      return {
+        text: segments.join('\n\n'),
+        warning: 'Legacy .doc format — please review extracted preview below'
+      };
+    }
+
+    function toggleExtractedPreview() {
+      const box = document.getElementById('extractedPreviewBox');
+      const label = document.getElementById('previewToggleLabel');
+      const isHidden = box.classList.contains('hidden');
+      box.classList.toggle('hidden', !isHidden);
+      label.textContent = isHidden ? 'Hide Text' : 'Preview Text';
+    }
+
+    function syncExtractedText() {
+      const val = document.getElementById('extractedFileText').value;
+      state.uploadedFile.extractedText = val;
+      const trimmed = val.trim();
+      const words = trimmed ? trimmed.split(/\s+/).length : 0;
+      state.uploadedFile.wordCount = words;
+      document.getElementById('extractedPreviewStats').textContent = `${words.toLocaleString()} words \u2022 ${val.length.toLocaleString()} characters`;
+      document.getElementById('uploadedFileStatus').innerHTML =
+        `<i data-lucide="check-circle" class="w-3.5 h-3.5 text-emerald-600"></i><span class="text-emerald-700">Ready &bull; ${words.toLocaleString()} words</span>`;
+      refreshIcons();
+    }
+
+    function loadExtractedIntoTextEditor() {
+      const extracted = document.getElementById('extractedFileText').value.trim() || state.uploadedFile.extractedText.trim();
+      if (!extracted) {
+        showToast('No extracted text available to transfer yet.', 'error');
+        return;
+      }
+      document.getElementById('assignmentTextArea').value = extracted;
+      const titleInput = document.getElementById('assignmentTitleInput');
+      if (!titleInput.value.trim() && state.uploadedFile.name) {
+        titleInput.value = state.uploadedFile.name.replace(/\.[^/.]+$/, '');
+      }
+      updateTextStats();
+      switchSubmissionTab('text');
+      showToast('Document text loaded into editor!', 'success');
+    }
+
+    function removeUploadedFile() {
+      state.uploadedFile = { name: '', format: '', extractedText: '', wordCount: 0 };
+      document.getElementById('fileInput').value = '';
+      document.getElementById('extractedFileText').value = '';
+      document.getElementById('uploadedFileCard').classList.add('hidden');
+      document.getElementById('extractedPreviewBox').classList.add('hidden');
+      showToast('Uploaded file removed', 'info');
+    }
+
+    function updateTextStats() {
+      const text = document.getElementById('assignmentTextArea').value;
+      const trimmed = text.trim();
+      const words = trimmed ? trimmed.split(/\s+/).length : 0;
+      const chars = text.length;
+      document.getElementById('textStatsBadge').textContent = `${words.toLocaleString()} words \u2022 ${chars.toLocaleString()} characters`;
+    }
+
+    function clearDirectText() {
+      document.getElementById('assignmentTextArea').value = '';
+      document.getElementById('assignmentTitleInput').value = '';
+      updateTextStats();
+    }
+
+    // =========================================================================
+    // 7. CONTEXT FIELDS, LANGUAGE SELECTION & SAMPLE DATA
+    // =========================================================================
+    function toggleContextFields() {
+      const container = document.getElementById('contextFieldsContainer');
+      const icon = document.getElementById('toggleContextIcon');
+      const label = document.getElementById('toggleContextLabel');
+      const isHidden = container.classList.contains('hidden');
+      container.classList.toggle('hidden', !isHidden);
+      icon.setAttribute('data-lucide', isHidden ? 'chevron-up' : 'chevron-down');
+      label.textContent = isHidden ? 'Collapse Fields' : 'Expand Fields';
+      refreshIcons();
+    }
+
+    function appendFocusInstruction(snippet) {
+      const textarea = document.getElementById('additionalInstructionsInput');
+      const current = textarea.value.trim();
+      if (!current.includes(snippet)) {
+        textarea.value = current ? `${current}\n- ${snippet}` : `- ${snippet}`;
+      }
+      textarea.focus();
+    }
+
+    function selectResponseLanguage(lang) {
+      state.responseLanguage = lang;
+      updateLanguageUI();
+    }
+
+    function updateLanguageUI() {
+      document.querySelectorAll('.lang-option').forEach(btn => {
+        const isSelected = btn.dataset.lang === state.responseLanguage;
+        if (isSelected) {
+          btn.className = 'lang-option px-4 py-3 rounded-xl text-xs sm:text-sm font-bold transition-all flex flex-col items-center justify-center gap-0.5 bg-white text-purple-900 shadow-2xs border border-pink-300';
+        } else {
+          btn.className = 'lang-option px-4 py-3 rounded-xl text-xs sm:text-sm font-bold transition-all flex flex-col items-center justify-center gap-0.5 text-slate-600 hover:text-purple-900 border border-transparent';
+        }
+      });
+    }
+
+    function loadSampleAssignment() {
+      switchSubmissionTab('text');
+      document.getElementById('assignmentTitleInput').value = 'Urban Green Spaces and Biodiversity Resilience';
+      document.getElementById('assignmentTextArea').value =
+`Urbanization has accelerated rapidly over the past century, transforming natural ecosystems into dense metropolitan centers. While cities drive economic innovation, they also fragment habitats and intensify the urban heat island effect. Integrating biodiverse green infrastructure—such as green roofs, ecological corridors, and native urban parks—offers a vital strategy for climate adaptation.
+
+First, urban green spaces regulate microclimates through evapotranspiration and shading, lowering peak summer temperatures by up to 3 degrees Celsius in dense neighborhoods. Second, ecological corridors reconnect isolated habitats, enabling pollinators and avian species to migrate safely across city landscapes. For instance, the High Line in New York and Singapore's Park Connector Network demonstrate how repurposed urban infrastructure can support native flora while enhancing public well-being.
+
+However, several challenges remain. Many municipal parks rely heavily on non-native ornamental grass that requires excessive irrigation and provides minimal ecological value. Additionally, green gentrification can inadvertently raise housing costs, displacing lower-income communities who benefit most from accessible green spaces. Therefore, urban planners must pair ecological restoration with inclusive housing policies to ensure environmental justice and long-term urban resilience.`;
+
+      updateTextStats();
+
+      document.getElementById('taskRequirementsInput').value =
+        'Write a structured 3-paragraph analytical essay examining the ecological benefits and socio-economic challenges of urban green infrastructure, supported by real-world examples.';
+      document.getElementById('learningObjectivesInput').value =
+        'Demonstrate critical thinking, clear thesis development, academic vocabulary usage, and balanced synthesis of environmental and social perspectives.';
+      document.getElementById('additionalInstructionsInput').value =
+        '- Focus on academic vocabulary.\n- Pay special attention to critical thinking.';
+
+      if (state.selectedAssessments.length === 0) {
+        state.selectedAssessments = ['formative', 'content', 'language', 'clil_rubrics'];
+        renderAssessmentCards();
+      }
+
+      hideWorkspaceError();
+      showToast('Sample academic assignment loaded!', 'success');
+    }
+
+    // =========================================================================
+    // 8. GEMINI API INTEGRATION & ASSESSMENT GENERATION
+    // =========================================================================
+    function showWorkspaceError(title, msg) {
+      const box = document.getElementById('workspaceErrorAlert');
+      document.getElementById('workspaceErrorTitle').textContent = title;
+      document.getElementById('workspaceErrorMessage').textContent = msg;
+      box.classList.remove('hidden');
+      box.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+
+    function hideWorkspaceError() {
+      document.getElementById('workspaceErrorAlert').classList.add('hidden');
+    }
+
+    function getSubmittedContent() {
+      const liveExtracted = (document.getElementById('extractedFileText')?.value || state.uploadedFile.extractedText || '').trim();
+      const directText = (document.getElementById('assignmentTextArea')?.value || '').trim();
+      const customTitle = (document.getElementById('assignmentTitleInput')?.value || '').trim();
+
+      if (state.submissionTab === 'file') {
+        if (liveExtracted) {
+          return {
+            text: liveExtracted,
+            title: customTitle || state.uploadedFile.name || 'Uploaded Document'
+          };
+        }
+        if (directText) {
+          return {
+            text: directText,
+            title: customTitle || 'Written Assignment'
+          };
+        }
+      } else {
+        if (directText) {
+          return {
+            text: directText,
+            title: customTitle || 'Written Assignment'
+          };
+        }
+        if (liveExtracted) {
+          return {
+            text: liveExtracted,
+            title: customTitle || state.uploadedFile.name || 'Uploaded Document'
+          };
+        }
+      }
+
+      return { text: '', title: '' };
+    }
+
+    function startLoadingAnimation() {
+      const overlay = document.getElementById('loadingOverlay');
+      const msgEl = document.getElementById('loadingStatusMessage');
+      document.getElementById('loadingTargetLang').textContent = state.responseLanguage;
+      overlay.classList.remove('hidden');
+
+      let step = 0;
+      const updateStepUI = (idx) => {
+        msgEl.textContent = LOADING_MESSAGES[idx];
+        for (let i = 0; i < 4; i++) {
+          const row = document.getElementById(`stepIndicator${i}`);
+          const dot = row.querySelector('span');
+          if (i < idx) {
+            row.className = 'flex items-center gap-2.5 text-xs font-semibold text-emerald-700';
+            dot.className = 'w-2 h-2 rounded-full bg-emerald-500';
+          } else if (i === idx) {
+            row.className = 'flex items-center gap-2.5 text-xs font-bold text-purple-900';
+            dot.className = 'w-2 h-2 rounded-full bg-pink-500 animate-ping';
+          } else {
+            row.className = 'flex items-center gap-2.5 text-xs font-medium text-slate-400';
+            dot.className = 'w-2 h-2 rounded-full bg-slate-300';
+          }
+        }
+      };
+
+      updateStepUI(0);
+      state.loadingInterval = setInterval(() => {
+        step = (step + 1) % LOADING_MESSAGES.length;
+        updateStepUI(step);
+      }, 2200);
+    }
+
+    function stopLoadingAnimation() {
+      if (state.loadingInterval) {
+        clearInterval(state.loadingInterval);
+        state.loadingInterval = null;
+      }
+      document.getElementById('loadingOverlay').classList.add('hidden');
+    }
+
+    async function generateAIAssessment() {
+      hideWorkspaceError();
+
+      // 1. Validate selected assessment types
+      if (state.selectedAssessments.length === 0) {
+        showWorkspaceError(
+          'No Assessment Type Selected',
+          'Please select at least one assessment type in Step 1 before generating an AI assessment.'
+        );
+        return;
+      }
+
+      // 2. Validate submitted assignment content
+      const submission = getSubmittedContent();
+      if (!submission.text || submission.text.length < 15) {
+        showWorkspaceError(
+          'Assignment Content Missing',
+          'Please upload a document (PDF, DOC, DOCX) with extractable text or enter your assignment in the text editor in Step 2.'
+        );
+        return;
+      }
+
+      const taskReq = document.getElementById('taskRequirementsInput').value.trim();
+      const learningObj = document.getElementById('learningObjectivesInput').value.trim();
+      const additionalInst = document.getElementById('additionalInstructionsInput').value.trim();
+
+      const selectedTypeObjects = state.selectedAssessments
+        .map(id => ASSESSMENT_TYPES.find(a => a.id === id))
+        .filter(Boolean);
+
+      startLoadingAnimation();
+
+      try {
+        const aiResult = await callGeminiAssessmentAPI({
+          mode: state.mode,
+          language: state.responseLanguage,
+          selectedTypes: selectedTypeObjects,
+          assignmentTitle: submission.title,
+          assignmentText: submission.text,
+          taskRequirements: taskReq,
+          learningObjectives: learningObj,
+          additionalInstructions: additionalInst
+        });
+
+        const reportRecord = {
+          id: 'rep_' + Date.now(),
+          createdAt: new Date().toISOString(),
+          displayDate: new Date().toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+          }),
+          assignmentTitle: submission.title,
+          mode: state.mode,
+          language: state.responseLanguage,
+          selectedTypeIds: selectedTypeObjects.map(t => t.id),
+          selectedTypeTitles: selectedTypeObjects.map(t => t.title),
+          data: aiResult
+        };
+
+        state.currentReport = reportRecord;
+        saveReportToHistory(reportRecord);
+        renderResultsDashboard(reportRecord);
+        stopLoadingAnimation();
+        navigateTo('results');
+        showToast('AI assessment generated successfully!', 'success');
+      } catch (err) {
+        stopLoadingAnimation();
+        console.error('Assessment generation failed:', err);
+        showWorkspaceError(
+          'AI Assessment Generation Error',
+          err.message || 'An unexpected error occurred while analyzing your assignment. Please try again.'
+        );
+      }
+    }
+
+    async function callGeminiAssessmentAPI({
+      mode,
+      language,
+      selectedTypes,
+      assignmentTitle,
+      assignmentText,
+      taskRequirements,
+      learningObjectives,
+      additionalInstructions
+    }) {
+      const isTeacher = mode === 'teacher';
+      const hasCLIL = selectedTypes.some(t => t.id === 'clil_rubrics');
+
+      const systemPrompt = `You are SANELIYAMG ASSESSMENT AI, an elite academic assessment, rubric evaluation, and educational feedback engine.
+Your mission is to deliver an extraordinarily thorough, deeply analytical, evidence-rich, and pedagogically structured evaluation of the submitted academic assignment. Avoid superficial summaries or vague generalizations—every section must provide substantive depth, concrete textual evidence, and clear diagnostic structure.
+
+AUDIENCE & TONE:
+- Active Mode: ${isTeacher ? 'TEACHER MODE' : 'STUDENT MODE'}
+- ${isTeacher
+  ? 'Adopt an authoritative, analytical, pedagogically rigorous educator voice suitable for evaluating student achievement, diagnosing learning gaps against standards, and outlining targeted instructional interventions and differentiation strategies.'
+  : 'Adopt a supportive, constructive, mentor-like learning coach voice that clearly explains why specific parts of the assignment succeed or need work, demystifies mistakes with concrete before-and-after examples, and guides the student step-by-step toward mastery.'}
+
+CRITICAL LANGUAGE REQUIREMENT:
+- Write 100% of every descriptive text value in your JSON response strictly in ${language} (${language === 'Russian' ? 'Русский' : language === 'Kazakh' ? 'Қазақша' : 'English'}).
+- Preserve authentic academic, linguistic, and pedagogical terminology in ${language} with natural, publication-grade grammar.
+- Keep all JSON schema property keys in English exactly as defined, and keep each item's "assessmentId" matching the exact ID provided, while writing all localized titles, ratings, metrics, evaluations, quotes, rationales, revisions, and recommendations in ${language}.
+
+DEPTH & EVIDENCE MANDATE:
+1. OVERALL SUMMARY (Section A): Provide an estimated percentage/band score, a proficiency tier label, a comprehensive 2-to-3 paragraph executive synthesis analyzing argument, mastery, and alignment with task requirements, plus 4 high-level core performance metrics (e.g., Content Depth, Structure & Coherence, Language & Style, Critical Thinking).
+2. SELECTED ASSESSMENT FRAMEWORKS (Section B): Evaluate EVERY selected assessment type independently in the exact order requested. For EACH selected framework, provide:
+   - A specific score/rating badge and proficiency level.
+   - A thorough 2-to-3 paragraph analytical evaluation citing exact phrases/sentences from the submitted work.
+   - 3 to 4 structured sub-criteria evaluations tailored specifically to that framework's pedagogical dimensions (e.g., for Language Assessment: Grammar & Syntax, Academic Vocabulary, Cohesion & Paragraphing, Mechanics & Punctuation; for Cognitive Assessment: Analysis & Synthesis, Critical Evaluation, Problem-Solving & Application, Higher-Order Thinking; for Self-Assessment: Self-Evaluation Criteria & Guiding Reflective Questions; for Peer Assessment: Peer-Review Rubric Dimensions & Collaborative Feedback Prompts; for Formative/Summative/Content/Feedback: domain-specific rubric criteria).
+   - 2 to 3 exact verbatim evidence quotes from the assignment paired with analytical commentary.
+   - 2 to 3 targeted action steps specific to that assessment lens.
+${hasCLIL ? '   - Specifically for "clil_rubrics", ALSO populate "clil4Cs" with deeply detailed blocks for Content, Communication, Cognition, and Culture (each with rating, detailed analysis, textual evidence, and improvement tip).' : ''}
+3. STRENGTHS (Section C): Provide 3 to 5 detailed strength cards, each containing the core strength title, an exact verbatim quote from the student's work, an academic explanation of why it is effective, and the underlying academic competency demonstrated.
+4. AREAS FOR IMPROVEMENT & ERROR ANALYSIS (Section D): Provide 3 to 5 detailed diagnostic items, each identifying the issue category, an exact problematic excerpt/quote from the assignment (or description of missing element), a clear diagnostic explanation of why it weakens the work, and a concrete "suggestedRevision" demonstrating how to rewrite or fix it.
+5. DETAILED ACTIONABLE RECOMMENDATIONS (Section E): Provide 3 to 6 structured recommendations categorized across phases (Immediate Revisions, Short-Term Skill Building, Long-Term Academic Mastery), each with a clear title, concrete step-by-step strategy/exercise, and expected learning impact.
+6. FINAL CONCLUSION (Section F): Provide a comprehensive synthesizing conclusion plus 2 to 3 concrete next-step milestones.`;
+
+      const selectedListText = selectedTypes
+        .map((t, idx) => `${idx + 1}. [ID: ${t.id}] ${t.title}: ${t.description}`)
+        .join('\n');
+
+      const userPrompt = `Conduct an in-depth, richly structured academic evaluation of the following submission.
+
+ASSIGNMENT TITLE: ${assignmentTitle}
+
+SELECTED ASSESSMENT TYPES TO EVALUATE (${selectedTypes.length} total):
+${selectedListText}
+
+OPTIONAL CONTEXT PROVIDED:
+- Task Requirements: ${taskRequirements || 'Not specified — infer standard academic expectations appropriate to the text genre and discipline.'}
+- Learning Objectives: ${learningObjectives || 'Not specified — evaluate implicit disciplinary, analytical, and communicative outcomes.'}
+- Additional Instructions: ${additionalInstructions || 'None specified'}
+
+SUBMITTED ASSIGNMENT TEXT:
+"""
+${assignmentText.slice(0, 32000)}
+"""
+
+Generate the complete, richly detailed structured assessment strictly in ${language}.`;
+
+      const responseSchema = {
+        type: "OBJECT",
+        properties: {
+          overallPerformanceLevel: {
+            type: "STRING",
+            description: `Descriptive overall proficiency tier in ${language} (e.g., Exemplary / Proficient / Developing / Emerging)`
+          },
+          overallScorePercentage: {
+            type: "STRING",
+            description: `Estimated overall score or band in ${language} (e.g., "84% (B+)" or "84 / 100")`
+          },
+          overallSummary: {
+            type: "STRING",
+            description: `Detailed 2-to-3 paragraph executive overview of the submitted assignment, its thesis/purpose, analytical quality, and alignment with requirements in ${language}`
+          },
+          overallMetrics: {
+            type: "ARRAY",
+            description: `4 core performance metrics summarizing overall quality in ${language}`,
+            items: {
+              type: "OBJECT",
+              properties: {
+                dimension: { type: "STRING" },
+                rating: { type: "STRING" },
+                summary: { type: "STRING" }
+              },
+              required: ["dimension", "rating", "summary"]
+            }
+          },
+          selectedAssessments: {
+            type: "ARRAY",
+            description: "One deeply detailed, independent evaluation object for each selected assessment type",
+            items: {
+              type: "OBJECT",
+              properties: {
+                assessmentId: { type: "STRING" },
+                localizedTitle: {
+                  type: "STRING",
+                  description: `Title of this assessment type translated naturally into ${language}`
+                },
+                scoreOrStatus: {
+                  type: "STRING",
+                  description: `Specific score, band, or status indicator for this framework in ${language}`
+                },
+                evaluation: {
+                  type: "STRING",
+                  description: `Comprehensive 2-to-3 paragraph analytical evaluation specific to this assessment type, referencing concrete evidence and quotes from the text, written in ${language}`
+                },
+                subCriteria: {
+                  type: "ARRAY",
+                  description: `3 to 4 structured rubric sub-criteria or reflective/peer prompts specific to this assessment type in ${language}`,
+                  items: {
+                    type: "OBJECT",
+                    properties: {
+                      criterionName: { type: "STRING" },
+                      level: { type: "STRING" },
+                      analysis: { type: "STRING" }
+                    },
+                    required: ["criterionName", "level", "analysis"]
+                  }
+                },
+                evidenceQuotes: {
+                  type: "ARRAY",
+                  description: `2 to 3 verbatim quotes from the submitted assignment with inline analytical commentary in ${language}`,
+                  items: {
+                    type: "OBJECT",
+                    properties: {
+                      quote: { type: "STRING" },
+                      commentary: { type: "STRING" }
+                    },
+                    required: ["quote", "commentary"]
+                  }
+                },
+                targetedActionSteps: {
+                  type: "ARRAY",
+                  items: { type: "STRING" },
+                  description: `2 to 3 specific, actionable improvement steps for this assessment lens in ${language}`
+                },
+                keyTakeaway: {
+                  type: "STRING",
+                  description: `Synthesizing key takeaway for this assessment type in ${language}`
+                },
+                clil4Cs: {
+                  type: "OBJECT",
+                  description: "Required when assessmentId is clil_rubrics; evaluates the 4Cs in the target language",
+                  properties: {
+                    content: { type: "STRING" },
+                    communication: { type: "STRING" },
+                    cognition: { type: "STRING" },
+                    culture: { type: "STRING" }
+                  }
+                }
+              },
+              required: [
+                "assessmentId",
+                "localizedTitle",
+                "scoreOrStatus",
+                "evaluation",
+                "subCriteria",
+                "evidenceQuotes",
+                "targetedActionSteps",
+                "keyTakeaway"
+              ]
+            }
+          },
+          strengths: {
+            type: "ARRAY",
+            description: `3 to 5 detailed strength items with verbatim quotes and academic justification in ${language}`,
+            items: {
+              type: "OBJECT",
+              properties: {
+                title: { type: "STRING" },
+                evidenceQuote: { type: "STRING" },
+                explanation: { type: "STRING" },
+                competencyTag: { type: "STRING" }
+              },
+              required: ["title", "evidenceQuote", "explanation", "competencyTag"]
+            }
+          },
+          areasForImprovement: {
+            type: "ARRAY",
+            description: `3 to 5 detailed diagnostic items with exact excerpt, explanation, and concrete suggested revision in ${language}`,
+            items: {
+              type: "OBJECT",
+              properties: {
+                issueTitle: { type: "STRING" },
+                category: { type: "STRING" },
+                originalExcerpt: { type: "STRING" },
+                diagnosticExplanation: { type: "STRING" },
+                suggestedRevision: { type: "STRING" }
+              },
+              required: ["issueTitle", "category", "originalExcerpt", "diagnosticExplanation", "suggestedRevision"]
+            }
+          },
+          detailedRecommendations: {
+            type: "ARRAY",
+            description: `3 to 6 structured, phased recommendations with concrete strategies/exercises in ${language}`,
+            items: {
+              type: "OBJECT",
+              properties: {
+                phase: { type: "STRING" },
+                title: { type: "STRING" },
+                actionStep: { type: "STRING" },
+                expectedImpact: { type: "STRING" }
+              },
+              required: ["phase", "title", "actionStep", "expectedImpact"]
+            }
+          },
+          finalConclusion: {
+            type: "STRING",
+            description: `Comprehensive concluding synthesis summarizing overall performance, readiness, and key priorities in ${language}`
+          },
+          nextMilestones: {
+            type: "ARRAY",
+            items: { type: "STRING" },
+            description: `2 to 3 concrete next-step milestones in ${language}`
+          }
+        },
+        required: [
+          "overallPerformanceLevel",
+          "overallScorePercentage",
+          "overallSummary",
+          "overallMetrics",
+          "selectedAssessments",
+          "strengths",
+          "areasForImprovement",
+          "detailedRecommendations",
+          "finalConclusion",
+          "nextMilestones"
+        ]
+      };
+
+      const payload = {
+        contents: [{ parts: [{ text: userPrompt }] }],
+        systemInstruction: {
+          parts: [{ text: systemPrompt }]
+        },
+        generationConfig: {
+          responseMimeType: "application/json",
+          responseSchema: responseSchema,
+          temperature: 0.4,
+          maxOutputTokens: 16384
+        }
+      };
+
+      const apiKey = "";
+      const apiUrl = apiKey
+        ? `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`
+        : `/api/assess`;
+
+      // Exponential backoff fetch
+      let lastError = null;
+      const delays = [1000, 2000, 4000];
+
+      for (let attempt = 0; attempt <= delays.length; attempt++) {
+        try {
+          const response = await fetch(apiUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+
+          if (!response.ok) {
+            const errBody = await response.text().catch(() => '');
+            throw new Error(`API returned status ${response.status}${errBody ? ': ' + errBody.slice(0, 180) : ''}`);
+          }
+
+          const result = await response.json();
+          const rawText = result?.candidates?.[0]?.content?.parts?.[0]?.text;
+          if (!rawText) {
+            throw new Error('The AI model returned an empty response.');
+          }
+
+          const cleanedJson = rawText.replace(/^```json\s*/i, '').replace(/```\s*$/i, '').trim();
+          const parsed = JSON.parse(cleanedJson);
+          return parsed;
+        } catch (err) {
+          lastError = err;
+          if (attempt < delays.length) {
+            await new Promise(resolve => setTimeout(resolve, delays[attempt]));
+          }
+        }
+      }
+
+      throw lastError || new Error('Failed to connect to the AI assessment service.');
+    }
+
+    // =========================================================================
+    // 9. RESULTS DASHBOARD RENDERING & ACTIONS (COPY / PDF / NAVIGATION)
+    // =========================================================================
+    function renderResultsDashboard(record) {
+      const { assignmentTitle, mode, language, displayDate, data } = record;
+      const isTeacher = mode === 'teacher';
+
+      // Top metadata
+      document.getElementById('resAssignmentTitle').textContent = assignmentTitle;
+      document.getElementById('reportHeroTitle').textContent = assignmentTitle;
+      document.getElementById('reportMetaSubline').textContent =
+        `${isTeacher ? 'Teacher Evaluation' : 'Student Self-Review'} \u2022 Response Language: ${language} \u2022 ${displayDate}`;
+
+      const modeBadge = document.getElementById('resModeBadge');
+      modeBadge.textContent = isTeacher ? 'TEACHER MODE' : 'STUDENT MODE';
+      modeBadge.className = isTeacher
+        ? 'px-3 py-1 rounded-full text-xs font-bold bg-pink-100 text-pink-800 border border-pink-200'
+        : 'px-3 py-1 rounded-full text-xs font-bold bg-purple-100 text-purple-800 border border-purple-200';
+
+      document.getElementById('resLangBadge').textContent = `Language: ${language}`;
+      document.getElementById('resDateBadge').textContent = displayDate;
+
+      // Section A: Overall Summary & Metrics Matrix
+      document.getElementById('resOverallLevel').textContent = data.overallPerformanceLevel || 'Evaluated';
+      const scoreBadge = document.getElementById('resScoreBadge');
+      if (data.overallScorePercentage) {
+        scoreBadge.textContent = data.overallScorePercentage;
+        scoreBadge.classList.remove('hidden');
+      } else {
+        scoreBadge.classList.add('hidden');
+      }
+      document.getElementById('resOverallSummary').textContent = data.overallSummary || '';
+
+      const metrics = Array.isArray(data.overallMetrics) ? data.overallMetrics : [];
+      const metricsGrid = document.getElementById('resOverallMetricsGrid');
+      if (metrics.length > 0) {
+        metricsGrid.classList.remove('hidden');
+        metricsGrid.innerHTML = metrics.map(m => `
+          <div class="rounded-2xl p-4 bg-white/90 border border-purple-100 shadow-2xs space-y-1.5">
+            <div class="flex items-center justify-between gap-2">
+              <span class="text-xs font-bold text-slate-800">${escapeHTML(m.dimension || '')}</span>
+              <span class="px-2 py-0.5 rounded-md text-[11px] font-extrabold bg-pink-50 text-pink-700 border border-pink-200/80 shrink-0">
+                ${escapeHTML(m.rating || '')}
+              </span>
+            </div>
+            <p class="text-xs text-slate-600 leading-relaxed">${escapeHTML(m.summary || '')}</p>
+          </div>
+        `).join('');
+      } else {
+        metricsGrid.classList.add('hidden');
+        metricsGrid.innerHTML = '';
+      }
+
+      // Section B: Selected Assessment Results
+      const sections = Array.isArray(data.selectedAssessments) ? data.selectedAssessments : [];
+      document.getElementById('resSelectedCountTag').textContent = `${sections.length} Framework${sections.length === 1 ? '' : 's'}`;
+
+      const sectionsContainer = document.getElementById('resSelectedSectionsList');
+      sectionsContainer.innerHTML = sections.map((sec, index) => {
+        const meta = ASSESSMENT_TYPES.find(a => a.id === sec.assessmentId) || {
+          icon: 'check-circle-2',
+          title: sec.localizedTitle || `Assessment ${index + 1}`
+        };
+
+        const subCriteria = Array.isArray(sec.subCriteria) ? sec.subCriteria : [];
+        const subCriteriaHTML = subCriteria.length > 0 ? `
+          <div class="space-y-2.5 pt-2">
+            <h5 class="text-xs font-extrabold uppercase tracking-wider text-purple-800 flex items-center gap-1.5">
+              <i data-lucide="list-checks" class="w-3.5 h-3.5 text-pink-500"></i>
+              <span>Criterion-by-Criterion Breakdown</span>
+            </h5>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+              ${subCriteria.map(sc => `
+                <div class="rounded-2xl p-4 bg-white border border-purple-100/90 shadow-2xs space-y-1.5">
+                  <div class="flex items-center justify-between gap-2">
+                    <span class="font-display font-bold text-xs sm:text-sm text-slate-900">${escapeHTML(sc.criterionName || '')}</span>
+                    <span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-purple-50 text-purple-800 border border-purple-200 shrink-0">
+                      ${escapeHTML(sc.level || '')}
+                    </span>
+                  </div>
+                  <p class="text-xs sm:text-sm text-slate-600 leading-relaxed">${escapeHTML(sc.analysis || '')}</p>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        ` : '';
+
+        const isCLIL = sec.assessmentId === 'clil_rubrics' && sec.clil4Cs;
+        const clilGridHTML = isCLIL ? `
+          <div class="space-y-2.5 pt-2">
+            <h5 class="text-xs font-extrabold uppercase tracking-wider text-pink-700 flex items-center gap-1.5">
+              <i data-lucide="compass" class="w-3.5 h-3.5 text-purple-600"></i>
+              <span>CLIL 4Cs Framework Matrix</span>
+            </h5>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div class="rounded-2xl p-4 bg-pink-50/70 border border-pink-200/80">
+                <span class="text-xs font-extrabold uppercase tracking-wider text-pink-700 block mb-1">1. Content</span>
+                <p class="text-xs sm:text-sm text-slate-700 leading-relaxed">${escapeHTML(sec.clil4Cs.content || '')}</p>
+              </div>
+              <div class="rounded-2xl p-4 bg-purple-50/70 border border-purple-200/80">
+                <span class="text-xs font-extrabold uppercase tracking-wider text-purple-700 block mb-1">2. Communication</span>
+                <p class="text-xs sm:text-sm text-slate-700 leading-relaxed">${escapeHTML(sec.clil4Cs.communication || '')}</p>
+              </div>
+              <div class="rounded-2xl p-4 bg-fuchsia-50/70 border border-fuchsia-200/80">
+                <span class="text-xs font-extrabold uppercase tracking-wider text-fuchsia-700 block mb-1">3. Cognition</span>
+                <p class="text-xs sm:text-sm text-slate-700 leading-relaxed">${escapeHTML(sec.clil4Cs.cognition || '')}</p>
+              </div>
+              <div class="rounded-2xl p-4 bg-indigo-50/70 border border-indigo-200/80">
+                <span class="text-xs font-extrabold uppercase tracking-wider text-indigo-700 block mb-1">4. Culture</span>
+                <p class="text-xs sm:text-sm text-slate-700 leading-relaxed">${escapeHTML(sec.clil4Cs.culture || '')}</p>
+              </div>
+            </div>
+          </div>
+        ` : '';
+
+        const evidenceQuotes = Array.isArray(sec.evidenceQuotes) ? sec.evidenceQuotes : [];
+        const evidenceHTML = evidenceQuotes.length > 0 ? `
+          <div class="space-y-2 pt-2">
+            <h5 class="text-xs font-extrabold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
+              <i data-lucide="quote" class="w-3.5 h-3.5 text-pink-500"></i>
+              <span>Textual Evidence &amp; Commentary</span>
+            </h5>
+            <div class="space-y-2">
+              ${evidenceQuotes.map(eq => `
+                <div class="rounded-xl bg-white/95 border-l-4 border-pink-400 border border-purple-100 p-3.5 space-y-1">
+                  <p class="text-xs sm:text-sm italic text-slate-800 font-medium">&ldquo;${escapeHTML(eq.quote || '')}&rdquo;</p>
+                  <p class="text-xs text-slate-600 leading-relaxed">${escapeHTML(eq.commentary || '')}</p>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        ` : '';
+
+        const targetedSteps = Array.isArray(sec.targetedActionSteps) ? sec.targetedActionSteps : [];
+        const targetedStepsHTML = targetedSteps.length > 0 ? `
+          <div class="rounded-2xl bg-purple-50/60 border border-purple-100 p-4 space-y-2">
+            <span class="text-xs font-extrabold uppercase tracking-wider text-purple-900 block">Targeted Next Steps</span>
+            <ul class="space-y-1.5">
+              ${targetedSteps.map(step => `
+                <li class="flex items-start gap-2 text-xs sm:text-sm text-slate-700">
+                  <i data-lucide="arrow-right-circle" class="w-4 h-4 text-pink-600 shrink-0 mt-0.5"></i>
+                  <span>${escapeHTML(step)}</span>
+                </li>
+              `).join('')}
+            </ul>
+          </div>
+        ` : '';
+
+        return `
+          <div class="rounded-3xl p-5 sm:p-7 border border-purple-200/80 bg-gradient-to-br from-white via-purple-50/25 to-pink-50/30 space-y-4 shadow-2xs">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-purple-100 pb-4">
+              <div class="flex items-center gap-3">
+                <div class="w-11 h-11 rounded-2xl btn-gradient text-white flex items-center justify-center shrink-0 shadow-2xs">
+                  <i data-lucide="${meta.icon}" class="w-5 h-5"></i>
+                </div>
+                <div>
+                  <h4 class="font-display font-bold text-base sm:text-lg text-slate-900">
+                    ${escapeHTML(sec.localizedTitle || meta.title)}
+                  </h4>
+                  <span class="text-[11px] font-medium text-slate-400">${escapeHTML(meta.title)}</span>
+                </div>
+              </div>
+              <span class="self-start sm:self-center px-3.5 py-1.5 rounded-full text-xs font-extrabold bg-white text-purple-900 border border-pink-200 shadow-2xs">
+                ${escapeHTML(sec.scoreOrStatus || 'Evaluated')}
+              </span>
+            </div>
+
+            <div class="text-sm sm:text-base text-slate-700 leading-relaxed whitespace-pre-line">
+              ${escapeHTML(sec.evaluation || '')}
+            </div>
+
+            ${subCriteriaHTML}
+            ${clilGridHTML}
+            ${evidenceHTML}
+            ${targetedStepsHTML}
+
+            ${sec.keyTakeaway ? `
+              <div class="rounded-xl bg-white border border-pink-200/80 px-4 py-3 flex items-start gap-2.5 text-xs sm:text-sm text-purple-950 font-medium">
+                <i data-lucide="sparkles" class="w-4 h-4 text-pink-500 shrink-0 mt-0.5"></i>
+                <span>${escapeHTML(sec.keyTakeaway)}</span>
+              </div>
+            ` : ''}
+          </div>
+        `;
+      }).join('');
+
+      // Section C: Strengths (Supports both rich objects and legacy strings)
+      const strengths = Array.isArray(data.strengths) ? data.strengths : [];
+      document.getElementById('resStrengthsList').innerHTML = strengths.map(item => {
+        if (typeof item === 'string') {
+          return `
+            <div class="flex items-start gap-3 p-4 rounded-2xl bg-emerald-50/45 border border-emerald-100/80">
+              <i data-lucide="check-circle-2" class="w-5 h-5 text-emerald-600 shrink-0 mt-0.5"></i>
+              <span class="leading-relaxed">${escapeHTML(item)}</span>
+            </div>
+          `;
+        }
+        return `
+          <div class="p-4 sm:p-5 rounded-2xl bg-emerald-50/40 border border-emerald-200/70 space-y-2.5 flex flex-col justify-between">
+            <div class="space-y-2">
+              <div class="flex items-start justify-between gap-2">
+                <div class="flex items-center gap-2">
+                  <i data-lucide="check-circle-2" class="w-5 h-5 text-emerald-600 shrink-0"></i>
+                  <h4 class="font-display font-bold text-sm sm:text-base text-slate-900">${escapeHTML(item.title || '')}</h4>
+                </div>
+                ${item.competencyTag ? `<span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800 shrink-0">${escapeHTML(item.competencyTag)}</span>` : ''}
+              </div>
+              ${item.evidenceQuote ? `
+                <blockquote class="rounded-xl bg-white/90 border-l-3 border-emerald-500 px-3 py-2 text-xs italic text-slate-700">
+                  &ldquo;${escapeHTML(item.evidenceQuote)}&rdquo;
+                </blockquote>
+              ` : ''}
+              <p class="text-xs sm:text-sm text-slate-700 leading-relaxed">${escapeHTML(item.explanation || '')}</p>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      // Section D: Areas for Improvement & Error Analysis (Supports rich diagnostic objects and legacy strings)
+      const improvements = Array.isArray(data.areasForImprovement) ? data.areasForImprovement : [];
+      document.getElementById('resImprovementsList').innerHTML = improvements.map(item => {
+        if (typeof item === 'string') {
+          return `
+            <div class="flex items-start gap-3 p-4 rounded-2xl bg-amber-50/45 border border-amber-100/80">
+              <i data-lucide="alert-triangle" class="w-5 h-5 text-amber-600 shrink-0 mt-0.5"></i>
+              <span class="leading-relaxed">${escapeHTML(item)}</span>
+            </div>
+          `;
+        }
+        return `
+          <div class="p-4 sm:p-5 rounded-2xl bg-amber-50/35 border border-amber-200/80 space-y-3">
+            <div class="flex flex-wrap items-center justify-between gap-2">
+              <div class="flex items-center gap-2">
+                <i data-lucide="alert-triangle" class="w-5 h-5 text-amber-600 shrink-0"></i>
+                <h4 class="font-display font-bold text-sm sm:text-base text-slate-900">${escapeHTML(item.issueTitle || '')}</h4>
+              </div>
+              ${item.category ? `<span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amber-100 text-amber-900">${escapeHTML(item.category)}</span>` : ''}
+            </div>
+
+            <p class="text-xs sm:text-sm text-slate-700 leading-relaxed">${escapeHTML(item.diagnosticExplanation || '')}</p>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3 pt-1">
+              ${item.originalExcerpt ? `
+                <div class="rounded-xl bg-rose-50/70 border border-rose-200/80 p-3.5 space-y-1">
+                  <span class="text-[11px] font-extrabold uppercase tracking-wider text-rose-700 block">Original Excerpt / Issue</span>
+                  <p class="text-xs sm:text-sm text-slate-800 italic">&ldquo;${escapeHTML(item.originalExcerpt)}&rdquo;</p>
+                </div>
+              ` : ''}
+              ${item.suggestedRevision ? `
+                <div class="rounded-xl bg-emerald-50/70 border border-emerald-200/80 p-3.5 space-y-1">
+                  <span class="text-[11px] font-extrabold uppercase tracking-wider text-emerald-700 block">Suggested Revision / Model Fix</span>
+                  <p class="text-xs sm:text-sm text-slate-800 font-medium">${escapeHTML(item.suggestedRevision)}</p>
+                </div>
+              ` : ''}
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      // Section E: Detailed Recommendations
+      document.getElementById('resRecommendationsSubtitle').textContent = isTeacher
+        ? 'Actionable instructional interventions, rubric adjustments, and student feedback strategies'
+        : 'Phased study and revision roadmap with concrete exercises to elevate your performance';
+
+      const recs = Array.isArray(data.detailedRecommendations) ? data.detailedRecommendations : [];
+      document.getElementById('resRecommendationsList').innerHTML = recs.map((rec, i) => `
+        <div class="rounded-2xl p-5 bg-gradient-to-br from-pink-50/50 to-purple-50/50 border border-pink-200/70 flex flex-col justify-between space-y-3">
+          <div class="space-y-2">
+            <div class="flex items-center justify-between gap-2">
+              <span class="w-6 h-6 rounded-full bg-pink-600 text-white text-xs font-bold flex items-center justify-center shrink-0">${i + 1}</span>
+              ${rec.phase ? `<span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-white text-purple-800 border border-purple-200">${escapeHTML(rec.phase)}</span>` : ''}
+            </div>
+            <h4 class="font-display font-bold text-sm sm:text-base text-slate-900">${escapeHTML(rec.title || '')}</h4>
+            <p class="text-xs sm:text-sm text-slate-700 leading-relaxed">${escapeHTML(rec.actionStep || '')}</p>
+          </div>
+          ${rec.expectedImpact ? `
+            <div class="pt-2.5 border-t border-pink-200/60 text-xs text-purple-900 font-medium flex items-start gap-1.5">
+              <i data-lucide="trending-up" class="w-3.5 h-3.5 text-pink-600 shrink-0 mt-0.5"></i>
+              <span>${escapeHTML(rec.expectedImpact)}</span>
+            </div>
+          ` : ''}
+        </div>
+      `).join('');
+
+      // Section F: Final Conclusion & Next Milestones
+      document.getElementById('resFinalConclusion').textContent = data.finalConclusion || '';
+      const milestones = Array.isArray(data.nextMilestones) ? data.nextMilestones : [];
+      const milestonesBox = document.getElementById('resNextMilestonesBox');
+      if (milestones.length > 0) {
+        milestonesBox.classList.remove('hidden');
+        milestonesBox.innerHTML = `
+          <div class="flex flex-wrap gap-2 pt-1">
+            ${milestones.map((m, idx) => `
+              <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/90 border border-purple-200 text-xs font-semibold text-purple-950">
+                <span class="w-4 h-4 rounded-full btn-gradient text-white text-[10px] font-bold flex items-center justify-center">${idx + 1}</span>
+                <span>${escapeHTML(m)}</span>
+              </span>
+            `).join('')}
+          </div>
+        `;
+      } else {
+        milestonesBox.classList.add('hidden');
+        milestonesBox.innerHTML = '';
+      }
+
+      refreshIcons();
+    }
+
+    function formatPlainTextReport(record) {
+      const { assignmentTitle, mode, language, displayDate, data } = record;
+      const lines = [
+        `SANELIYAMG ASSESSMENT AI — COMPREHENSIVE EDUCATIONAL ASSESSMENT REPORT`,
+        `Assignment: ${assignmentTitle}`,
+        `Mode: ${mode === 'teacher' ? 'Teacher Mode' : 'Student Mode'} | Language: ${language} | Date: ${displayDate}`,
+        `Overall Rating: ${data.overallPerformanceLevel}${data.overallScorePercentage ? ' (' + data.overallScorePercentage + ')' : ''}`,
+        `====================================================================`,
+        ``,
+        `A. OVERALL ASSESSMENT SUMMARY`,
+        data.overallSummary
+      ];
+
+      if (Array.isArray(data.overallMetrics) && data.overallMetrics.length > 0) {
+        lines.push(`\nCore Performance Dimensions:`);
+        data.overallMetrics.forEach(m => {
+          lines.push(`- ${m.dimension} [${m.rating}]: ${m.summary}`);
+        });
+      }
+
+      lines.push(`\nB. SELECTED ASSESSMENT RESULTS`);
+
+      (data.selectedAssessments || []).forEach((sec, idx) => {
+        lines.push(`\n${idx + 1}. ${sec.localizedTitle} [${sec.scoreOrStatus}]`);
+        lines.push(sec.evaluation);
+        if (Array.isArray(sec.subCriteria) && sec.subCriteria.length > 0) {
+          lines.push(`  Criterion-by-Criterion Breakdown:`);
+          sec.subCriteria.forEach(sc => {
+            lines.push(`  * ${sc.criterionName} (${sc.level}): ${sc.analysis}`);
+          });
+        }
+        if (sec.clil4Cs) {
+          lines.push(`  CLIL 4Cs Framework:`);
+          lines.push(`  - Content: ${sec.clil4Cs.content}`);
+          lines.push(`  - Communication: ${sec.clil4Cs.communication}`);
+          lines.push(`  - Cognition: ${sec.clil4Cs.cognition}`);
+          lines.push(`  - Culture: ${sec.clil4Cs.culture}`);
+        }
+        if (Array.isArray(sec.evidenceQuotes) && sec.evidenceQuotes.length > 0) {
+          lines.push(`  Textual Evidence:`);
+          sec.evidenceQuotes.forEach(eq => {
+            lines.push(`  > "${eq.quote}" — ${eq.commentary}`);
+          });
+        }
+        if (Array.isArray(sec.targetedActionSteps) && sec.targetedActionSteps.length > 0) {
+          lines.push(`  Targeted Next Steps:`);
+          sec.targetedActionSteps.forEach(st => lines.push(`  - ${st}`));
+        }
+        if (sec.keyTakeaway) {
+          lines.push(`  * Key Takeaway: ${sec.keyTakeaway}`);
+        }
+      });
+
+      lines.push(`\nC. STRENGTHS & EVIDENCE HIGHLIGHTS`);
+      (data.strengths || []).forEach(s => {
+        if (typeof s === 'string') {
+          lines.push(`• ${s}`);
+        } else {
+          lines.push(`• ${s.title}${s.competencyTag ? ' [' + s.competencyTag + ']' : ''}`);
+          if (s.evidenceQuote) lines.push(`  Quote: "${s.evidenceQuote}"`);
+          lines.push(`  Analysis: ${s.explanation}`);
+        }
+      });
+
+      lines.push(`\nD. AREAS FOR IMPROVEMENT & DIAGNOSTIC REVISIONS`);
+      (data.areasForImprovement || []).forEach(a => {
+        if (typeof a === 'string') {
+          lines.push(`• ${a}`);
+        } else {
+          lines.push(`• ${a.issueTitle}${a.category ? ' [' + a.category + ']' : ''}`);
+          if (a.originalExcerpt) lines.push(`  Original Excerpt: "${a.originalExcerpt}"`);
+          lines.push(`  Diagnosis: ${a.diagnosticExplanation}`);
+          if (a.suggestedRevision) lines.push(`  Suggested Revision: ${a.suggestedRevision}`);
+        }
+      });
+
+      lines.push(`\nE. DETAILED ACTIONABLE RECOMMENDATIONS`);
+      (data.detailedRecommendations || []).forEach((r, i) => {
+        lines.push(`${i + 1}. ${r.phase ? '[' + r.phase + '] ' : ''}${r.title}: ${r.actionStep}`);
+        if (r.expectedImpact) lines.push(`   Expected Impact: ${r.expectedImpact}`);
+      });
+
+      lines.push(`\nF. FINAL ASSESSMENT CONCLUSION`);
+      lines.push(data.finalConclusion);
+      if (Array.isArray(data.nextMilestones) && data.nextMilestones.length > 0) {
+        lines.push(`\nNext Milestones:`);
+        data.nextMilestones.forEach((m, i) => lines.push(`${i + 1}. ${m}`));
+      }
+
+      return lines.join('\n');
+    }
+
+    function copyAssessmentFeedback() {
+      if (!state.currentReport) return;
+      const formatted = formatPlainTextReport(state.currentReport);
+
+      const textArea = document.createElement('textarea');
+      textArea.value = formatted;
+      textArea.style.position = 'fixed';
+      textArea.style.left = '-9999px';
+      document.body.appendChild(textArea);
+      textArea.select();
+
+      try {
+        document.execCommand('copy');
+        showToast('Assessment feedback copied to clipboard!', 'success');
+      } catch (err) {
+        showToast('Unable to copy automatically. Please select text manually.', 'error');
+      } finally {
+        document.body.removeChild(textArea);
+      }
+    }
+
+    async function downloadAssessmentPDF() {
+      if (!state.currentReport) return;
+      const btn = document.getElementById('downloadPdfBtn');
+      const originalHTML = btn.innerHTML;
+      btn.disabled = true;
+      btn.innerHTML = `<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i><span>Preparing PDF...</span>`;
+      refreshIcons();
+
+      const safeFilename = (state.currentReport.assignmentTitle || 'SANELIYAMG_Assessment')
+        .replace(/[^a-zA-Z0-9\u0400-\u04FF_-]+/g, '_')
+        .slice(0, 50) + '.pdf';
+
+      try {
+        if (window.html2pdf) {
+          const element = document.getElementById('printableReportArea');
+          const opt = {
+            margin: [10, 10, 10, 10],
+            filename: safeFilename,
+            image: { type: 'jpeg', quality: 0.98 },
+            html2canvas: { scale: 2, useCORS: true, letterRendering: true },
+            jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+            pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
+          };
+          await window.html2pdf().set(opt).from(element).save();
+          showToast('PDF report downloaded!', 'success');
+        } else {
+          window.print();
+        }
+      } catch (err) {
+        console.error('PDF export error, falling back to print:', err);
+        window.print();
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = originalHTML;
+        refreshIcons();
+      }
+    }
+
+    function startNewAssessment() {
+      removeUploadedFile();
+      clearDirectText();
+      document.getElementById('taskRequirementsInput').value = '';
+      document.getElementById('learningObjectivesInput').value = '';
+      document.getElementById('additionalInstructionsInput').value = '';
+      hideWorkspaceError();
+      navigateTo('workspace');
+      showToast('Workspace cleared for a new assessment', 'info');
+    }
+
+    // =========================================================================
+    // 10. ASSESSMENT HISTORY PERSISTENCE & VIEW
+    // =========================================================================
+    function loadHistoryFromStorage() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEYS.HISTORY);
+        state.history = raw ? JSON.parse(raw) : [];
+      } catch (_) {
+        state.history = [];
+      }
+    }
+
+    function saveReportToHistory(record) {
+      state.history.unshift(record);
+      if (state.history.length > 50) {
+        state.history = state.history.slice(0, 50);
+      }
+      try {
+        localStorage.setItem(STORAGE_KEYS.HISTORY, JSON.stringify(state.history));
+      } catch (_) {}
+      updateHistoryBadges();
+    }
+
+    function updateHistoryBadges() {
+      const count = state.history.length;
+      const navBadge = document.getElementById('navHistoryCount');
+      const mobBadge = document.getElementById('mobileHistoryCount');
+      if (count > 0) {
+        navBadge.textContent = count;
+        navBadge.classList.remove('hidden');
+      } else {
+        navBadge.classList.add('hidden');
+      }
+      mobBadge.textContent = count;
+    }
+
+    function renderHistoryView() {
+      const emptyEl = document.getElementById('historyEmptyState');
+      const listEl = document.getElementById('historyListContainer');
+
+      if (!state.history || state.history.length === 0) {
+        emptyEl.classList.remove('hidden');
+        listEl.innerHTML = '';
+        return;
+      }
+
+      emptyEl.classList.add('hidden');
+      listEl.innerHTML = state.history.map(item => {
+        const isTeacher = item.mode === 'teacher';
+        const badges = (item.selectedTypeTitles || [])
+          .map(t => `<span class="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-purple-50 text-purple-800 border border-purple-200/80">${escapeHTML(t)}</span>`)
+          .join('');
+
+        return `
+          <div class="bg-white rounded-3xl p-5 sm:p-6 border border-purple-100 shadow-soft hover:border-pink-300 transition-all flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+            <div class="space-y-2.5">
+              <div class="flex flex-wrap items-center gap-2">
+                <span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold ${
+                  isTeacher ? 'bg-pink-100 text-pink-800' : 'bg-purple-100 text-purple-800'
+                }">
+                  ${isTeacher ? 'Teacher Mode' : 'Student Mode'}
+                </span>
+                <span class="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-slate-100 text-slate-700">
+                  ${escapeHTML(item.language)}
+                </span>
+                <span class="text-xs text-slate-400">${escapeHTML(item.displayDate)}</span>
+              </div>
+
+              <h3 class="font-display font-bold text-lg text-slate-900">
+                ${escapeHTML(item.assignmentTitle)}
+              </h3>
+
+              <div class="flex flex-wrap gap-1.5">
+                ${badges}
+              </div>
+            </div>
+
+            <div class="flex items-center gap-2.5 shrink-0">
+              <button type="button" onclick="openHistoryItem('${item.id}')"
+                class="px-4 py-2.5 rounded-xl btn-gradient text-white text-xs sm:text-sm font-semibold flex items-center gap-2 shadow-soft">
+                <i data-lucide="external-link" class="w-4 h-4"></i>
+                <span>Open Results</span>
+              </button>
+              <button type="button" onclick="deleteHistoryItem('${item.id}')"
+                title="Delete record"
+                class="p-2.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 transition-colors">
+                <i data-lucide="trash-2" class="w-4 h-4"></i>
+              </button>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      refreshIcons();
+    }
+
+    function openHistoryItem(id) {
+      const found = state.history.find(item => item.id === id);
+      if (!found) return;
+      state.currentReport = found;
+      renderResultsDashboard(found);
+      navigateTo('results');
+    }
+
+    function deleteHistoryItem(id) {
+      state.history = state.history.filter(item => item.id !== id);
+      try {
+        localStorage.setItem(STORAGE_KEYS.HISTORY, JSON.stringify(state.history));
+      } catch (_) {}
+      updateHistoryBadges();
+      renderHistoryView();
+      showToast('Assessment record deleted', 'info');
+    }
+
+    // =========================================================================
+    // 11. ABOUT & SETTINGS VIEWS
+    // =========================================================================
+    function renderAboutFrameworks() {
+      const container = document.getElementById('aboutFrameworksList');
+      if (!container) return;
+      container.innerHTML = ASSESSMENT_TYPES.map(item => `
+        <div class="rounded-2xl p-4 border border-purple-100 bg-purple-50/25 space-y-1.5">
+          <div class="flex items-center gap-2 text-purple-900 font-display font-bold text-sm">
+            <i data-lucide="${item.icon}" class="w-4 h-4 text-pink-600"></i>
+            <span>${item.title}</span>
+          </div>
+          <p class="text-xs text-slate-600 leading-relaxed">${item.description}</p>
+        </div>
+      `).join('');
+    }
+
+    function loadSettingsFromStorage() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEYS.SETTINGS);
+        if (raw) {
+          state.settings = { ...state.settings, ...JSON.parse(raw) };
+        }
+      } catch (_) {}
+    }
+
+    function renderSettingsUI() {
+      const modeSelect = document.getElementById('settingDefaultMode');
+      const langSelect = document.getElementById('settingDefaultLang');
+      const grid = document.getElementById('settingsPresetsGrid');
+      if (!modeSelect || !langSelect || !grid) return;
+
+      modeSelect.value = state.settings.defaultMode || 'welcome';
+      langSelect.value = state.settings.defaultLanguage || 'English';
+
+      grid.innerHTML = ASSESSMENT_TYPES.map(item => {
+        const checked = (state.settings.defaultAssessments || []).includes(item.id);
+        return `
+          <label class="flex items-center gap-2.5 p-3 rounded-xl border border-purple-100 bg-purple-50/20 hover:bg-pink-50/30 cursor-pointer text-xs font-semibold text-slate-800">
+            <input type="checkbox" value="${item.id}" ${checked ? 'checked' : ''} onchange="saveSettingsFromUI()"
+              class="rounded text-pink-600 focus:ring-purple-300" />
+            <span>${item.title}</span>
+          </label>
+        `;
+      }).join('');
+    }
+
+    function saveSettingsFromUI() {
+      const defaultMode = document.getElementById('settingDefaultMode').value;
+      const defaultLanguage = document.getElementById('settingDefaultLang').value;
+      const checkedBoxes = Array.from(document.querySelectorAll('#settingsPresetsGrid input[type="checkbox"]:checked'));
+      const defaultAssessments = checkedBoxes.map(cb => cb.value);
+
+      state.settings = { defaultMode, defaultLanguage, defaultAssessments };
+      try {
+        localStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify(state.settings));
+      } catch (_) {}
+
+      selectResponseLanguage(defaultLanguage);
+      showToast('Preferences saved', 'success');
+    }
+
+    function promptClearHistory() {
+      const control = document.getElementById('clearHistoryControl');
+      control.innerHTML = `
+        <div class="flex items-center gap-2">
+          <span class="text-xs font-semibold text-rose-700">Delete all saved reports?</span>
+          <button type="button" onclick="confirmClearAllHistory()"
+            class="px-3 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold">
+            Yes, Clear All
+          </button>
+          <button type="button" onclick="resetClearHistoryControl()"
+            class="px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold">
+            Cancel
+          </button>
+        </div>
+      `;
+    }
+
+    function resetClearHistoryControl() {
+      document.getElementById('clearHistoryControl').innerHTML = `
+        <button type="button" onclick="promptClearHistory()"
+          class="px-4 py-2.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-xs sm:text-sm font-semibold flex items-center gap-2 transition-colors">
+          <i data-lucide="trash-2" class="w-4 h-4"></i>
+          <span>Clear Assessment History</span>
+        </button>
+      `;
+      refreshIcons();
+    }
+
+    function confirmClearAllHistory() {
+      state.history = [];
+      try {
+        localStorage.removeItem(STORAGE_KEYS.HISTORY);
+      } catch (_) {}
+      updateHistoryBadges();
+      resetClearHistoryControl();
+      showToast('Assessment history cleared', 'info');
+    }
+
+    // =========================================================================
+    // 12. UTILITIES (TOASTS & HTML ESCAPING)
+    // =========================================================================
+    function showToast(message, type = 'info') {
+      const container = document.getElementById('toastContainer');
+      const toast = document.createElement('div');
+
+      const styles = {
+        success: 'bg-white border-emerald-200 text-emerald-900',
+        error: 'bg-white border-rose-200 text-rose-900',
+        info: 'bg-white border-purple-200 text-purple-950'
+      };
+      const icons = {
+        success: 'check-circle-2',
+        error: 'alert-circle',
+        info: 'sparkles'
+      };
+      const iconColors = {
+        success: 'text-emerald-600',
+        error: 'text-rose-600',
+        info: 'text-pink-600'
+      };
+
+      toast.className = `pointer-events-auto flex items-center gap-2.5 px-4 py-3 rounded-2xl border shadow-soft text-xs sm:text-sm font-semibold transition-all duration-300 ${styles[type] || styles.info}`;
+      toast.innerHTML = `
+        <i data-lucide="${icons[type] || icons.info}" class="w-4 h-4 ${iconColors[type] || iconColors.info} shrink-0"></i>
+        <span>${escapeHTML(message)}</span>
+      `;
+
+      container.appendChild(toast);
+      refreshIcons();
+
+      setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateY(8px)';
+        setTimeout(() => toast.remove(), 300);
+      }, 3200);
+    }
+
+    function escapeHTML(str) {
+      return String(str || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+  </script>
+</body>
+</html>
